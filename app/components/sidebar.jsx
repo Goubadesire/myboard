@@ -1,0 +1,42 @@
+import { MdOutlineDashboardCustomize } from "react-icons/md";
+import { CiBookmarkCheck } from "react-icons/ci";
+import { BsSubstack } from "react-icons/bs";
+import { PiExamDuotone } from "react-icons/pi";
+import { CiCalendarDate } from "react-icons/ci";
+import Link from "next/link";
+
+export default function Sidebar() {
+  return (
+    <div className="w-64 h-screen bg-base-200 shadow-lg flex flex-col">
+      {/* Titre Menu centré avec fond couleur primaire */}
+      <div className="text-center py-4 bg-primary text-base-100 font-bold text-xl">
+        Menu
+      </div>
+
+      {/* Liste des items */}
+      <ul className="flex flex-col mt-4 gap-2 px-2">
+        <li className="btn btn-ghost w-full text-center">
+          <MdOutlineDashboardCustomize size={20} color="#1e90ff"/>
+          <Link href='/dashboard'>Dashboard</Link>
+        </li>
+        <li className="btn btn-ghost w-full text-center">
+          <CiBookmarkCheck size={20} color="#2ecc71"/>
+          <Link href='/notes'>Notes</Link>
+          
+        </li>
+        <li className="btn btn-ghost w-full text-center">
+          <BsSubstack size={20} color="#"/>
+          <Link href='/matieres'>Matières</Link>
+        </li>
+        <li className="btn btn-ghost w-full text-center">
+          <PiExamDuotone size={20} color="#f39c12"/>
+          <Link href='/devoirs'>Devoir</Link>
+        </li>
+        <li className="btn btn-ghost w-full text-center">
+          <CiCalendarDate size={20} color="#34495e"/>
+          <Link href='/planning'>Emploi du temps</Link>
+        </li>
+      </ul>
+    </div>
+  );
+}

@@ -68,8 +68,11 @@ export default function LoginPage() {
         />
 
         <button type="submit" className="btn btn-primary w-full">Se connecter</button>
-        <p>
-          <Link href='/register'>sinscrire</Link>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Pas encore inscrit ?{' '}
+          <Link href="/register" className="text-primary font-semibold">
+            S'inscrire
+          </Link>
         </p>
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
       </form>

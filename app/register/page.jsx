@@ -75,8 +75,12 @@ export default function RegisterPage() {
         />
 
         <button type="submit" className="btn btn-primary w-full">Créer le compte</button>
-
-        <Link href='/login'>conneion</Link>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Deja inscrit ?{' '}
+          <Link href="/login" className="text-primary font-semibold">
+            Se connecter
+          </Link>
+        </p>
       </form>
     </div>
   )

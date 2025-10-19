@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-
+import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -68,7 +68,9 @@ export default function LoginPage() {
         />
 
         <button type="submit" className="btn btn-primary w-full">Se connecter</button>
-
+        <p>
+          <Link href='/register'>sinscrire</Link>
+        </p>
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
       </form>
     </div>

@@ -1,11 +1,13 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"
 import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [message, setMessage] = useState("")
   const router = useRouter()
 
@@ -57,15 +59,27 @@ export default function LoginPage() {
         <label className="label">
           <span className="label-text">Mot de passe</span>
         </label>
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          className="input input-bordered w-full mb-6"
-          value={password}
-          name="password"
-          onChange={handleChange}
-          required
-        />
+        <div className="relative mb-6">
+            <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Mot de passe"
+            className="input input-bordered w-full mb-6"
+            value={password}
+            name="password"
+            onChange={handleChange}
+            required
+          />
+          <button
+            type='button'
+           className="absolute inset-y-0 right-3 mb-6 flex items-center text-gray-500 hover:text-gray-700"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+           >
+            {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
+
+          </button>
+        </div>
+        
 
         <button type="submit" className="btn btn-primary w-full">Se connecter</button>
         <p className="mt-4 text-center text-sm text-gray-600">

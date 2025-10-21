@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import MainLayout from "../components/mainLayout"
 import AuthGuard from "../components/AuthGuard"
 import { getUser } from "@/lib/session"
@@ -14,13 +14,15 @@ export default function MatieresPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [currentMatiere, setCurrentMatiere] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const user = getUser()
+  // ✅ Mémoisation de l'utilisateur pour éviter les re-renders inutiles
+  const user = useMemo(() => getUser(), [])
 
+  // ✅ Chargement initial des données en parallèle
   useEffect(() => {
     if (!user) return
-    fetchSemestres()
-    fetchMatieres()
+    Promise.all([fetchSemestres(), fetchMatieres()])
   }, [user])
 
   const fetchSemestres = async () => {
@@ -48,34 +50,32 @@ export default function MatieresPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!nom || !coefficient || !semestreId) return alert("Veuillez remplir toutes les données")
+    setIsLoading(true)
 
     const method = isEditMode ? "PUT" : "POST"
     const url = isEditMode ? `/api/matieres?id=${currentMatiere.id}` : "/api/matieres"
 
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        email: user.email
-      },
-      body: JSON.stringify({ nom, coefficient: parseFloat(coefficient), semestre_id: semestreId })
-    })
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          email: user.email
+        },
+        body: JSON.stringify({ nom, coefficient: parseFloat(coefficient), semestre_id: semestreId })
+      })
 
-    const data = await res.json()
-    if (data.matiere) {
-      if (isEditMode) {
-        setMatieres(prev => prev.map(m => (m.id === data.matiere.id ? data.matiere : m)))
+      const data = await res.json()
+      if (data.matiere) {
+        await fetchMatieres() // ✅ recharge proprement après ajout ou modification
+        closeModal()
       } else {
-        setMatieres(prev => [...prev, data.matiere])
+        alert(data.error)
       }
-      setNom("")
-      setCoefficient("")
-      setSemestreId("")
-      setIsModalOpen(false)
-      setIsEditMode(false)
-      setCurrentMatiere(null)
-    } else {
-      alert(data.error)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -90,16 +90,29 @@ export default function MatieresPage() {
 
   const handleDelete = async (id) => {
     if (!confirm("Voulez-vous vraiment supprimer cette matière ?")) return
-    const res = await fetch(`/api/matieres?id=${id}`, {
-      method: "DELETE",
-      headers: { email: user.email }
-    })
-    const data = await res.json()
-    if (data.success) {
-      setMatieres(prev => prev.filter(m => m.id !== id))
-    } else {
-      alert(data.error)
+    try {
+      const res = await fetch(`/api/matieres?id=${id}`, {
+        method: "DELETE",
+        headers: { email: user.email }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setMatieres(prev => prev.filter(m => m.id !== id))
+      } else {
+        alert(data.error)
+      }
+    } catch (err) {
+      console.error(err)
     }
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setIsEditMode(false)
+    setCurrentMatiere(null)
+    setNom("")
+    setCoefficient("")
+    setSemestreId("")
   }
 
   return (
@@ -120,14 +133,7 @@ export default function MatieresPage() {
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => {
-                setIsModalOpen(false)
-                setIsEditMode(false)
-                setCurrentMatiere(null)
-                setNom("")
-                setCoefficient("")
-                setSemestreId("")
-              }}
+              onClick={closeModal}
             ></div>
 
             <div className="relative z-50 bg-base-100 p-6 rounded-2xl shadow-xl w-80 animate-fade-in">
@@ -170,19 +176,12 @@ export default function MatieresPage() {
                   <button
                     type="button"
                     className="btn btn-ghost"
-                    onClick={() => {
-                      setIsModalOpen(false)
-                      setIsEditMode(false)
-                      setCurrentMatiere(null)
-                      setNom("")
-                      setCoefficient("")
-                      setSemestreId("")
-                    }}
+                    onClick={closeModal}
                   >
                     Annuler
                   </button>
-                  <button type="submit" className="btn btn-primary">
-                    {isEditMode ? "Mettre à jour" : "Ajouter"}
+                  <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                    {isLoading ? "En cours..." : isEditMode ? "Mettre à jour" : "Ajouter"}
                   </button>
                 </div>
               </form>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import MainLayout from "../components/mainLayout";
 import AuthGuard from "../components/AuthGuard";
 import { getUser } from "@/lib/session";
@@ -15,6 +15,7 @@ export default function NotesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentNote, setCurrentNote] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🔹 nouveau state
 
   const sessionUser = getUser();
 
@@ -49,6 +50,8 @@ export default function NotesPage() {
     e.preventDefault();
     if (!valeur || !coefficient || !matiereId) return alert("Veuillez remplir toutes les données");
 
+    setIsSubmitting(true); // 🔹 active le loading
+
     const method = isEditMode ? "PUT" : "POST";
     const url = isEditMode ? `/api/notes?id=${currentNote.id}` : "/api/notes";
 
@@ -79,6 +82,8 @@ export default function NotesPage() {
       }
     } catch (err) {
       console.error("Erreur handleSubmit:", err);
+    } finally {
+      setIsSubmitting(false); // 🔹 désactive le loading
     }
   };
 
@@ -119,15 +124,22 @@ export default function NotesPage() {
     setIsModalOpen(false);
   };
 
+  const notesByMatiere = useMemo(() => {
+    const map = {};
+    matieres.forEach((m) => {
+      map[m.id] = notes.filter((n) => n.matiere_id === m.id);
+    });
+    return map;
+  }, [matieres, notes]);
+
   const getMoyenneByMatiere = (matiere_id) => {
-    const matiereNotes = notes.filter((n) => n.matiere_id === matiere_id);
+    const matiereNotes = notesByMatiere[matiere_id] || [];
     const totalCoef = matiereNotes.reduce((sum, n) => sum + n.coefficient, 0);
     if (totalCoef === 0) return 0;
     const total = matiereNotes.reduce((sum, n) => sum + n.valeur * n.coefficient, 0);
     return (total / totalCoef).toFixed(2);
   };
 
-  // 🔹 Nouveau : couleur et icône selon la moyenne
   const getMoyenneStyle = (moyenne) => {
     if (moyenne < 10) return { color: "text-red-500", icon: <FaFrown className="inline ml-1" /> };
     if (moyenne < 14) return { color: "text-yellow-500", icon: <FaMeh className="inline ml-1" /> };
@@ -168,7 +180,35 @@ export default function NotesPage() {
 
                 <div className="flex justify-end gap-2 mt-2">
                   <button type="button" className="btn btn-ghost" onClick={resetModal}>Annuler</button>
-                  <button type="submit" className="btn btn-primary">{isEditMode ? "Mettre à jour" : "Ajouter"}</button>
+                  <button type="submit" className="btn btn-primary flex items-center justify-center gap-2" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                          ></path>
+                        </svg>
+                        Envoi...
+                      </>
+                    ) : (
+                      isEditMode ? "Mettre à jour" : "Ajouter"
+                    )}
+                  </button>
                 </div>
               </form>
             </div>
@@ -192,7 +232,7 @@ export default function NotesPage() {
                   </div>
 
                   <div className="flex flex-col mt-3 gap-2">
-                    {notes.filter((n) => n.matiere_id === m.id).map((n) => (
+                    {(notesByMatiere[m.id] || []).map((n) => (
                       <div key={n.id} className="flex justify-between items-center bg-base-200 p-2 rounded">
                         <span>{n.valeur} (coef {n.coefficient})</span>
                         <div className="flex gap-2">

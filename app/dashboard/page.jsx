@@ -4,10 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import MainLayout from "../components/mainLayout";
 import AuthGuard from "../components/AuthGuard";
 import { getUser } from "@/lib/session";
-import { FaCalendarAlt, FaProjectDiagram } from "react-icons/fa";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import Link from "next/link";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
+import { FaCalendarAlt, FaProjectDiagram, FaGraduationCap } from "react-icons/fa";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -17,71 +16,46 @@ export default function DashboardPage() {
   const [emplois, setEmplois] = useState([]);
   const [matieres, setMatieres] = useState([]);
   const [notes, setNotes] = useState([]);
-  const [semestres, setSemestres] = useState([]); // <-- nouvelle state pour les semestres
+  const [semestres, setSemestres] = useState([]);
 
   const sessionUser = getUser();
 
   useEffect(() => {
     if (!sessionUser) return;
     setUser(sessionUser);
-    fetchDevoirs();
-    fetchEmplois();
-    fetchMatieres();
-    fetchNotes();
-    fetchSemestres(); // <-- récupère les semestres
+
+    const fetchAll = async () => {
+      try {
+        const [dRes, eRes, mRes, nRes, sRes] = await Promise.all([
+          fetch("/api/devoirs", { headers: { email: sessionUser.email } }),
+          fetch("/api/emplois", { headers: { email: sessionUser.email } }),
+          fetch("/api/matieres", { headers: { email: sessionUser.email } }),
+          fetch("/api/notes", { headers: { email: sessionUser.email } }),
+          fetch("/api/semestres", { headers: { email: sessionUser.email } }),
+        ]);
+
+        const [dData, eData, mData, nData, sData] = await Promise.all([
+          dRes.json(),
+          eRes.json(),
+          mRes.json(),
+          nRes.json(),
+          sRes.json(),
+        ]);
+
+        if (dData.devoirs) setDevoirs(dData.devoirs);
+        if (eData.emplois) setEmplois(eData.emplois);
+        if (mData.matieres) setMatieres(mData.matieres);
+        if (nData.notes) setNotes(nData.notes);
+        if (sData.semestres) setSemestres(sData.semestres);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchAll();
   }, [sessionUser?.email]);
 
-  const fetchDevoirs = async () => {
-    try {
-      const res = await fetch("/api/devoirs", { headers: { email: sessionUser.email } });
-      const data = await res.json();
-      if (data.devoirs) setDevoirs(data.devoirs);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchEmplois = async () => {
-    try {
-      const res = await fetch("/api/emplois", { headers: { email: sessionUser.email } });
-      const data = await res.json();
-      if (data.emplois) setEmplois(data.emplois);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchMatieres = async () => {
-    try {
-      const res = await fetch("/api/matieres", { headers: { email: sessionUser.email } });
-      const data = await res.json();
-      if (data.matieres) setMatieres(data.matieres);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchNotes = async () => {
-    try {
-      const res = await fetch("/api/notes", { headers: { email: sessionUser.email } });
-      const data = await res.json();
-      if (data.notes) setNotes(data.notes);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchSemestres = async () => {
-    try {
-      const res = await fetch("/api/semestres", { headers: { email: sessionUser.email } });
-      const data = await res.json();
-      if (data.semestres) setSemestres(data.semestres);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // 📌 Optimisation : calcul des moyennes
+  // Moyennes par semestre
   const moyennesSemestres = useMemo(() => {
     const semestreMap = {};
     const semestreIds = [...new Set(matieres.map(m => m.semestre_id))];
@@ -114,32 +88,64 @@ export default function DashboardPage() {
     return parseFloat((total / semIds.length).toFixed(2));
   }, [moyennesSemestres]);
 
-  // Graphique : devoirs par matière
-  const matieresLabels = matieres.map(m => m.nom);
-  const matieresData = matieres.map(m => devoirs.filter(d => d.matiere_id === m.id).length);
+  // Moyenne par matière pour le graphique
+  const moyenneParMatiere = useMemo(() => {
+    return matieres.map(m => {
+      const notesMatiere = notes.filter(n => n.matiere_id === m.id);
+      if (notesMatiere.length === 0) return 0;
+      const total = notesMatiere.reduce((sum, n) => sum + n.valeur, 0);
+      return parseFloat((total / notesMatiere.length).toFixed(2));
+    });
+  }, [matieres, notes]);
 
-  const barData = {
-    labels: matieresLabels,
-    datasets: [
-      {
-        label: "Nombre de devoirs",
-        data: matieresData,
-        backgroundColor: "rgba(59, 130, 246, 0.7)",
-      },
-    ],
-  };
+  // Données du graphique avec couleurs dynamiques et coins arrondis
+  const barData = useMemo(() => {
+    const colors = moyenneParMatiere.map(val => {
+      if (val < 9) return "rgba(239, 68, 68, 0.7)";
+      if (val < 12) return "rgba(251, 191, 36, 0.7)";
+      return "rgba(34, 197, 94, 0.7)";
+    });
 
-  const barOptions = {
+    return {
+      labels: matieres.map(m => m.nom),
+      datasets: [
+        {
+          label: "Moyenne par matière",
+          data: moyenneParMatiere,
+          backgroundColor: colors,
+          borderRadius: 6,
+          barThickness: 20,
+        },
+      ],
+    };
+  }, [matieres, moyenneParMatiere]);
+
+  const barOptions = useMemo(() => ({
+    indexAxis: 'y', // barres horizontales
     responsive: true,
-    plugins: { legend: { display: false } },
-  };
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true },
+      title: {
+        display: true,
+        text: "Moyenne par matière",
+        font: { size: 16 }
+      }
+    },
+    scales: {
+      x: { beginAtZero: true, max: 20 },
+      y: { ticks: { autoSkip: false } },
+    }
+  }), []);
 
-  // Tâches à venir
+  // Prochains devoirs
   const today = new Date();
-  const devoirsAvenir = devoirs
-    .filter(d => new Date(d.date_limite) >= today)
-    .sort((a, b) => new Date(a.date_limite) - new Date(b.date_limite))
-    .slice(0, 5);
+  const devoirsAvenir = useMemo(() => {
+    return devoirs
+      .filter(d => new Date(d.date_limite) >= today)
+      .sort((a, b) => new Date(a.date_limite) - new Date(b.date_limite))
+      .slice(0, 5);
+  }, [devoirs]);
 
   return (
     <AuthGuard>
@@ -151,37 +157,55 @@ export default function DashboardPage() {
           {Object.entries(moyennesSemestres).map(([semestreId, moyenne]) => {
             const semestreNom = semestres.find(s => s.id === semestreId)?.nom || `Semestre ${semestreId}`;
             return (
-              <div key={semestreId} className="card p-4 bg-base-100 rounded-xl shadow">
-                <h3 className="font-semibold text-lg"><span>Semestre</span> {semestreNom}</h3>
-                <p>Moyenne générale: {moyenne}</p>
+              <div
+                key={semestreId}
+                className="card p-6 rounded-2xl shadow-lg bg-blue-50 flex items-center gap-4 hover:scale-105 transition-all duration-300 animate-fadeInUp"
+              >
+                <FaGraduationCap className="text-blue-700 text-3xl" />
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-1">{semestreNom}</h3>
+                  <p className="text-2xl font-bold text-blue-900">{moyenne} / 20</p>
+                  <p className="text-sm text-blue-600 mt-1">Moyenne générale</p>
+                </div>
               </div>
             );
           })}
 
-          <div className="card p-4 bg-base-100 rounded-xl shadow">
-            <h3 className="font-semibold text-lg">Année</h3>
-            <p>Moyenne générale annuelle: {moyenneAnnuelle}</p>
+          {/* Moyenne annuelle */}
+          <div className="card p-6 rounded-2xl shadow-lg bg-green-50 flex items-center gap-4 hover:scale-105 transition-all duration-300 animate-fadeInUp">
+            <FaGraduationCap className="text-green-700 text-3xl" />
+            <div>
+              <h3 className="text-lg font-semibold text-green-700 mb-1">Année</h3>
+              <p className="text-2xl font-bold text-green-900">{moyenneAnnuelle} / 20</p>
+              <p className="text-sm text-green-600 mt-1">Moyenne générale annuelle</p>
+            </div>
           </div>
         </div>
 
-        {/* Graphique & tâches */}
+        {/* Graphique & prochains devoirs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="col-span-2 bg-base-100 p-4 rounded-2xl shadow">
-            <h2 className="text-lg font-semibold text-primary mb-3">Devoirs par matière</h2>
+          {/* Graphique */}
+          <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+            <h2 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <FaProjectDiagram /> Moyenne par matière
+            </h2>
             <Bar data={barData} options={barOptions} />
           </div>
 
-          <div className="bg-base-100 p-4 rounded-2xl shadow">
-            <h2 className="text-lg font-semibold text-primary mb-3">Prochains devoirs</h2>
+          {/* Prochains devoirs */}
+          <div className="bg-yellow-50 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+            <h2 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+              <FaCalendarAlt /> Prochains devoirs
+            </h2>
             <ul className="flex flex-col gap-2">
               {devoirsAvenir.length === 0 ? (
-                <li className="text-sm text-gray-500">Aucun devoir à venir</li>
+                <li className="text-sm text-yellow-700">Aucun devoir à venir</li>
               ) : (
                 devoirsAvenir.map(d => (
-                  <li key={d.id} className="p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+                  <li key={d.id} className="p-3 bg-yellow-100 rounded-lg flex justify-between items-center hover:bg-yellow-200 transition-colors duration-200">
                     <div>
                       <div className="font-medium">{d.titre}</div>
-                      <div className="text-xs text-gray-600">{d.date_limite}</div>
+                      <div className="text-xs text-yellow-700">{d.date_limite}</div>
                     </div>
                   </li>
                 ))

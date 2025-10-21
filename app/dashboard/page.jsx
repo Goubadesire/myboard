@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import MainLayout from "../components/mainLayout";
 import AuthGuard from "../components/AuthGuard";
 import { getUser } from "@/lib/session";
-import { FaPlus, FaTasks, FaCalendarAlt, FaProjectDiagram } from "react-icons/fa";
+import { FaCalendarAlt, FaProjectDiagram } from "react-icons/fa";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import Link from "next/link";
@@ -16,6 +16,8 @@ export default function DashboardPage() {
   const [devoirs, setDevoirs] = useState([]);
   const [emplois, setEmplois] = useState([]);
   const [matieres, setMatieres] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [semestres, setSemestres] = useState([]); // <-- nouvelle state pour les semestres
 
   const sessionUser = getUser();
 
@@ -25,6 +27,8 @@ export default function DashboardPage() {
     fetchDevoirs();
     fetchEmplois();
     fetchMatieres();
+    fetchNotes();
+    fetchSemestres(); // <-- récupère les semestres
   }, [sessionUser?.email]);
 
   const fetchDevoirs = async () => {
@@ -57,12 +61,60 @@ export default function DashboardPage() {
     }
   };
 
-  // Stats calculées
-  const totalDevoirs = devoirs.length;
-  const devoirsEnCours = devoirs.filter(d => d.statut === "en cours").length;
-  const devoirsEnRetard = devoirs.filter(d => d.statut === "en retard").length;
+  const fetchNotes = async () => {
+    try {
+      const res = await fetch("/api/notes", { headers: { email: sessionUser.email } });
+      const data = await res.json();
+      if (data.notes) setNotes(data.notes);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  // Graphique mock: nombre de devoirs par matière
+  const fetchSemestres = async () => {
+    try {
+      const res = await fetch("/api/semestres", { headers: { email: sessionUser.email } });
+      const data = await res.json();
+      if (data.semestres) setSemestres(data.semestres);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 📌 Optimisation : calcul des moyennes
+  const moyennesSemestres = useMemo(() => {
+    const semestreMap = {};
+    const semestreIds = [...new Set(matieres.map(m => m.semestre_id))];
+
+    semestreIds.forEach(id => {
+      const matieresSemestre = matieres.filter(m => m.semestre_id === id);
+      let totalPondere = 0;
+      let totalCoef = 0;
+
+      matieresSemestre.forEach(m => {
+        const notesMatiere = notes.filter(n => n.matiere_id === m.id);
+        if (notesMatiere.length === 0) return;
+        const totalNote = notesMatiere.reduce((sum, n) => sum + n.valeur, 0);
+        const moyenneMatiere = totalNote / notesMatiere.length;
+
+        totalPondere += moyenneMatiere * m.coefficient;
+        totalCoef += m.coefficient;
+      });
+
+      semestreMap[id] = totalCoef === 0 ? 0 : parseFloat((totalPondere / totalCoef).toFixed(2));
+    });
+
+    return semestreMap;
+  }, [matieres, notes]);
+
+  const moyenneAnnuelle = useMemo(() => {
+    const semIds = Object.keys(moyennesSemestres);
+    if (semIds.length === 0) return 0;
+    const total = semIds.reduce((sum, id) => sum + moyennesSemestres[id], 0);
+    return parseFloat((total / semIds.length).toFixed(2));
+  }, [moyennesSemestres]);
+
+  // Graphique : devoirs par matière
   const matieresLabels = matieres.map(m => m.nom);
   const matieresData = matieres.map(m => devoirs.filter(d => d.matiere_id === m.id).length);
 
@@ -82,7 +134,7 @@ export default function DashboardPage() {
     plugins: { legend: { display: false } },
   };
 
-  // Tâches à venir (prochains devoirs)
+  // Tâches à venir
   const today = new Date();
   const devoirsAvenir = devoirs
     .filter(d => new Date(d.date_limite) >= today)
@@ -94,35 +146,21 @@ export default function DashboardPage() {
       <MainLayout>
         <h1 className="text-2xl font-bold text-primary mb-6">Dashboard</h1>
 
-        {/* Cartes statistiques */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-100 p-4 rounded-xl shadow flex items-center gap-4">
-            <FaTasks className="text-blue-700 text-3xl" />
-            <div>
-              <div className="text-xl font-bold">{totalDevoirs}</div>
-              <div className="text-sm text-gray-600">Total devoirs</div>
-            </div>
-          </div>
-          <div className="bg-green-100 p-4 rounded-xl shadow flex items-center gap-4">
-            <FaTasks className="text-green-700 text-3xl" />
-            <div>
-              <div className="text-xl font-bold">{devoirsEnCours}</div>
-              <div className="text-sm text-gray-600">Devoirs en cours</div>
-            </div>
-          </div>
-          <div className="bg-red-100 p-4 rounded-xl shadow flex items-center gap-4">
-            <FaTasks className="text-red-700 text-3xl" />
-            <div>
-              <div className="text-xl font-bold">{devoirsEnRetard}</div>
-              <div className="text-sm text-gray-600">Devoirs en retard</div>
-            </div>
-          </div>
-          <div className="bg-yellow-100 p-4 rounded-xl shadow flex items-center gap-4">
-            <FaCalendarAlt className="text-yellow-700 text-3xl" />
-            <div>
-              <div className="text-xl font-bold">{emplois.length}</div>
-              <div className="text-sm text-gray-600">Créneaux planifiés</div>
-            </div>
+        {/* Moyennes par semestre */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {Object.entries(moyennesSemestres).map(([semestreId, moyenne]) => {
+            const semestreNom = semestres.find(s => s.id === semestreId)?.nom || `Semestre ${semestreId}`;
+            return (
+              <div key={semestreId} className="card p-4 bg-base-100 rounded-xl shadow">
+                <h3 className="font-semibold text-lg"><span>Semestre</span> {semestreNom}</h3>
+                <p>Moyenne générale: {moyenne}</p>
+              </div>
+            );
+          })}
+
+          <div className="card p-4 bg-base-100 rounded-xl shadow">
+            <h3 className="font-semibold text-lg">Année</h3>
+            <p>Moyenne générale annuelle: {moyenneAnnuelle}</p>
           </div>
         </div>
 
@@ -151,8 +189,6 @@ export default function DashboardPage() {
             </ul>
           </div>
         </div>
-
-        
       </MainLayout>
     </AuthGuard>
   );

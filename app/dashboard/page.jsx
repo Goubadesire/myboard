@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo } from "react";
 import MainLayout from "../components/mainLayout";
 import AuthGuard from "../components/AuthGuard";
 import { getUser } from "@/lib/session";
-import { Bar } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
 import { FaCalendarAlt, FaProjectDiagram, FaGraduationCap } from "react-icons/fa";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -88,7 +88,7 @@ export default function DashboardPage() {
     return parseFloat((total / semIds.length).toFixed(2));
   }, [moyennesSemestres]);
 
-  // Moyenne par matière pour le graphique
+  // Moyenne par matière
   const moyenneParMatiere = useMemo(() => {
     return matieres.map(m => {
       const notesMatiere = notes.filter(n => n.matiere_id === m.id);
@@ -98,12 +98,12 @@ export default function DashboardPage() {
     });
   }, [matieres, notes]);
 
-  // Données du graphique avec couleurs dynamiques et coins arrondis
-  const barData = useMemo(() => {
+  // Données du graphique
+  const doughnutData = useMemo(() => {
     const colors = moyenneParMatiere.map(val => {
-      if (val < 9) return "rgba(239, 68, 68, 0.7)";
-      if (val < 12) return "rgba(251, 191, 36, 0.7)";
-      return "rgba(34, 197, 94, 0.7)";
+      if (val < 9) return "rgba(239, 68, 68, 0.9)"; // Rouge
+      if (val < 12) return "rgba(251, 191, 36, 0.9)"; // Jaune
+      return "rgba(34, 197, 94, 0.9)"; // Vert
     });
 
     return {
@@ -113,32 +113,50 @@ export default function DashboardPage() {
           label: "Moyenne par matière",
           data: moyenneParMatiere,
           backgroundColor: colors,
-          borderRadius: 6,
-          barThickness: 20,
+          borderColor: "#fff",
+          borderWidth: 2,
+          hoverOffset: 12,
         },
       ],
     };
   }, [matieres, moyenneParMatiere]);
 
-  const barOptions = useMemo(() => ({
-    indexAxis: 'y', // barres horizontales
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: true },
-      title: {
-        display: true,
-        text: "Moyenne par matière",
-        font: { size: 16 }
-      }
-    },
-    scales: {
-      x: { beginAtZero: true, max: 20 },
-      y: { ticks: { autoSkip: false } },
-    }
-  }), []);
+  const doughnutOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "70%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            boxWidth: 14,
+            padding: 10,
+            font: { size: 12 },
+          },
+        },
+        title: {
+          display: true,
+          text: "Moyenne par matière",
+          font: { size: 16 },
+        },
+        tooltip: {
+          backgroundColor: "rgba(0,0,0,0.8)",
+          titleFont: { size: 14 },
+          bodyFont: { size: 13 },
+          callbacks: {
+            label: context => `${context.label}: ${context.parsed} / 20`,
+          },
+        },
+      },
+      animation: {
+        animateRotate: true,
+        animateScale: true,
+      },
+    }),
+    []
+  );
 
-  // Prochains devoirs
   const today = new Date();
   const devoirsAvenir = useMemo(() => {
     return devoirs
@@ -155,7 +173,8 @@ export default function DashboardPage() {
         {/* Moyennes par semestre */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {Object.entries(moyennesSemestres).map(([semestreId, moyenne]) => {
-            const semestreNom = semestres.find(s => s.id === semestreId)?.nom || `Semestre ${semestreId}`;
+            const semestreNom =
+              semestres.find(s => s.id === semestreId)?.nom || `Semestre ${semestreId}`;
             return (
               <div
                 key={semestreId}
@@ -163,7 +182,9 @@ export default function DashboardPage() {
               >
                 <FaGraduationCap className="text-blue-700 text-3xl" />
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-700 mb-1">{semestreNom}</h3>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-1">
+                    {semestreNom}
+                  </h3>
                   <p className="text-2xl font-bold text-blue-900">{moyenne} / 20</p>
                   <p className="text-sm text-blue-600 mt-1">Moyenne générale</p>
                 </div>
@@ -171,7 +192,6 @@ export default function DashboardPage() {
             );
           })}
 
-          {/* Moyenne annuelle */}
           <div className="card p-6 rounded-2xl shadow-lg bg-green-50 flex items-center gap-4 hover:scale-105 transition-all duration-300 animate-fadeInUp">
             <FaGraduationCap className="text-green-700 text-3xl" />
             <div>
@@ -185,11 +205,13 @@ export default function DashboardPage() {
         {/* Graphique & prochains devoirs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Graphique */}
-          <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 h-[380px]">
             <h2 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
               <FaProjectDiagram /> Moyenne par matière
             </h2>
-            <Bar data={barData} options={barOptions} />
+            <div className="h-[300px]">
+              <Doughnut data={doughnutData} options={doughnutOptions} />
+            </div>
           </div>
 
           {/* Prochains devoirs */}
@@ -202,7 +224,10 @@ export default function DashboardPage() {
                 <li className="text-sm text-yellow-700">Aucun devoir à venir</li>
               ) : (
                 devoirsAvenir.map(d => (
-                  <li key={d.id} className="p-3 bg-yellow-100 rounded-lg flex justify-between items-center hover:bg-yellow-200 transition-colors duration-200">
+                  <li
+                    key={d.id}
+                    className="p-3 bg-yellow-100 rounded-lg flex justify-between items-center hover:bg-yellow-200 transition-colors duration-200"
+                  >
                     <div>
                       <div className="font-medium">{d.titre}</div>
                       <div className="text-xs text-yellow-700">{d.date_limite}</div>

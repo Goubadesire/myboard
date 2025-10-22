@@ -5,6 +5,7 @@ import { BsSubstack } from "react-icons/bs";
 import { PiExamDuotone } from "react-icons/pi";
 import { CiCalendarDate } from "react-icons/ci";
 import { MdAdsClick } from "react-icons/md";
+import { ImProfile } from "react-icons/im";
 import Link from "next/link";
 
 export default function Sidebar() {
@@ -40,6 +41,10 @@ export default function Sidebar() {
         <li className="btn btn-ghost w-full justify-start gap-2">
           <MdAdsClick size={20} color="#ff69b4"/>
           <Link href='/semestre'>Semestres</Link>
+        </li>
+        <li className="btn btn-ghost w-full justify-start gap-2">
+          <ImProfile size={20} color="#8b4513"/>
+          <Link href='/profiles'>Profiles</Link>
         </li>
       </ul>
     </div>

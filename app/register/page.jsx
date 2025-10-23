@@ -145,6 +145,9 @@ export default function RegisterPage() {
             Se connecter
           </Link>
         </p>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          <Link href='/home' className="text-info font-semibold">Accueil</Link>
+        </p>
 
         {/* ✅ Toast Container React-Toastify */}
         <ToastContainer />

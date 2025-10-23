@@ -89,6 +89,9 @@ export default function LoginPage() {
           </Link>
         </p>
         {message && <p className="mt-4 text-center text-red-500">{message}</p>}
+        <p className="mt-4 text-center text-sm text-gray-600">
+          <Link href='/home' className="text-info font-semibold">Accueil</Link>
+        </p>
       </form>
     </div>
   )

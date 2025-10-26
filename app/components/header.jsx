@@ -5,9 +5,9 @@ import { clearUser, getUser } from "@/lib/session";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { ImExit } from "react-icons/im";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaMoon, FaSun } from "react-icons/fa";
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, toggleTheme, theme }) {
   const [userPhoto, setUserPhoto] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
@@ -26,7 +26,6 @@ export default function Header({ onMenuClick }) {
       })
       .catch(() => setUserPhoto(null));
 
-    // 🔹 Fermer le menu si clic à l'extérieur
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setIsMenuOpen(false);
@@ -55,42 +54,54 @@ export default function Header({ onMenuClick }) {
         <h1 className="text-2xl font-bold text-primary">StudentBoard</h1>
       </div>
 
-      {/* Section droite : photo + popover */}
-      <div className="relative" ref={menuRef}>
+      {/* Section droite : bouton dark mode + photo + popover */}
+      <div className="flex items-center gap-4">
+        {/* Toggle dark mode */}
         <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="w-14 h-14 rounded-full overflow-hidden border border-gray-300 transition-transform duration-150 hover:scale-105"
+          onClick={toggleTheme}
+          className="btn btn-circle btn-ghost"
+          aria-label="Toggle dark mode"
         >
-          {userPhoto ? (
-            <img
-              src={userPhoto}
-              alt="Photo de profil"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-base-300" />
-          )}
+          {theme === "light" ? <FaMoon size={20} color="#000"/> : <FaSun size={20} color="#ffd700"/>}
         </button>
 
-        {isMenuOpen && (
-          <div className="absolute right-0 mt-2 w-40 bg-white border rounded-md shadow-lg z-20 animate-fadeIn">
-            <button
-              onClick={() => {
-                setIsMenuOpen(false);
-                router.push("/profiles");
-              }}
-              className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
-            >
-              <span><FaUser size={20} color="#ff69b4"/></span> Profil
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors"
-            >
-              <span><ImExit size={20} color="#ff0000"/></span> Déconnexion
-            </button>
-          </div>
-        )}
+        {/* Photo profil */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-12 h-12 rounded-full overflow-hidden border border-base-300 transition-transform duration-150 hover:scale-105"
+          >
+            {userPhoto ? (
+              <img
+                src={userPhoto}
+                alt="Photo de profil"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-base-200" />
+            )}
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-40 bg-base-100 border border-base-300 rounded-md shadow-lg z-20 animate-fadeIn">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  router.push("/profiles");
+                }}
+                className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-base-200 transition-colors"
+              >
+                <FaUser size={20} color="#ff69b4" /> Profil
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-base-200 transition-colors"
+              >
+                <ImExit size={20} color="#ff0000" /> Déconnexion
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

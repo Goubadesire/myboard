@@ -8,12 +8,12 @@ import { MdAdsClick } from "react-icons/md";
 import { ImProfile } from "react-icons/im";
 import Link from "next/link";
 
-export default function Sidebar() {
+export default function Sidebar({profile}) {
   return (
     <div className="w-64 h-screen bg-base-200 shadow-lg flex flex-col">
       {/* Titre Menu centré avec fond couleur primaire */}
-      <div className="text-center py-4 bg-primary text-base-100 font-bold text-xl">
-        Menu
+      <div className="text-center py-7 bg-primary text-base-100 font-bold text-xl">
+        {profile?.full_name || "Utilisateur"}
       </div>
 
       {/* Liste des items */}

@@ -118,51 +118,51 @@ export default function ProfilePage() {
 
   return (
     <AuthGuard>
-      <MainLayout>
+      <MainLayout profile={profile}>
         <Toaster position="top-right" />
         <h1 className="text-3xl font-bold text-primary mb-8 text-center">Mon Profil</h1>
 
         {message && (
-          <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded text-center">
+          <div className="mb-4 p-3 bg-warning/20 border border-warning text-warning rounded text-center">
             {message}
           </div>
         )}
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* 🔹 Carte infos du profil */}
-          <div className="p-6 bg-white rounded-xl shadow-lg flex flex-col items-center gap-4">
+          <div className="p-6 bg-base-100 rounded-xl shadow-lg flex flex-col items-center gap-4 text-base-content">
             {profile.photo_url ? (
               <img
                 src={profile.photo_url}
                 alt="Photo de profil"
-                className="w-32 h-32 rounded-full object-cover border border-gray-300"
+                className="w-32 h-32 rounded-full object-cover border border-base-300"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xl">
+              <div className="w-32 h-32 rounded-full bg-base-200 flex items-center justify-center text-base-content text-xl">
                 ?
               </div>
             )}
             <div className="text-center space-y-2">
               <p className="flex items-center justify-center gap-2">
-                <FaUser size={20} color="#27ae60"/> <span>{profile.full_name || "-"}</span>
+                <FaUser className="text-success" /> <span>{profile.full_name || "-"}</span>
               </p>
               <p className="flex items-center justify-center gap-2">
-                <FaGraduationCap size={20} color="#3f51b5"/> <span>{profile.filiere || "-"}</span>
+                <FaGraduationCap className="text-primary" /> <span>{profile.filiere || "-"}</span>
               </p>
               <p className="flex items-center justify-center gap-2">
-                <FaSchool size={20} color="#e34234"/> <span>{profile.ecole || "-"}</span>
+                <FaSchool className="text-error" /> <span>{profile.ecole || "-"}</span>
               </p>
             </div>
           </div>
 
           {/* 🔹 Formulaire */}
-          <form onSubmit={handleSubmit} className="p-6 bg-white rounded-xl shadow-lg flex flex-col gap-4 border border-gray-200">
+          <form onSubmit={handleSubmit} className="p-6 bg-base-100 rounded-xl shadow-lg flex flex-col gap-4 border border-base-300 text-base-content">
             {previewUrl && (
               <div className="mb-4 flex justify-center">
                 <img
                   src={previewUrl}
                   alt="Photo de profil"
-                  className="w-32 h-32 rounded-full object-cover border border-gray-300"
+                  className="w-32 h-32 rounded-full object-cover border border-base-300"
                 />
               </div>
             )}
@@ -174,7 +174,7 @@ export default function ProfilePage() {
                 name="full_name"
                 value={profile.full_name}
                 onChange={handleInputChange}
-                className="input input-bordered w-full mt-1"
+                className="input input-bordered w-full mt-1 bg-base-100 text-base-content"
                 required
               />
             </label>
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                 name="filiere"
                 value={profile.filiere}
                 onChange={handleInputChange}
-                className="input input-bordered w-full mt-1"
+                className="input input-bordered w-full mt-1 bg-base-100 text-base-content"
                 required
               />
             </label>
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                 name="ecole"
                 value={profile.ecole}
                 onChange={handleInputChange}
-                className="input input-bordered w-full mt-1"
+                className="input input-bordered w-full mt-1 bg-base-100 text-base-content"
                 required
               />
             </label>
@@ -209,7 +209,7 @@ export default function ProfilePage() {
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
-                className="input input-bordered w-full mt-1"
+                className="input input-bordered w-full mt-1 bg-base-100 text-base-content"
               />
             </label>
 

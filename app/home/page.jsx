@@ -1,30 +1,72 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState, useEffect } from "react";
 import Head from "next/head";
 import { motion } from "framer-motion";
 import { BsGlobe } from "react-icons/bs";
-import { FaCalendarAlt, FaBookOpen, FaChartLine, FaUserGraduate, FaLinkedin, FaWhatsapp, FaEnvelope,  } from "react-icons/fa";
+import { IoSunnyOutline } from "react-icons/io5";
+import { FiMoon } from "react-icons/fi";
+import { FaRegUser } from "react-icons/fa";
+import {
+  FaWhatsapp,
+  FaEnvelope,
+} from "react-icons/fa";
 
 export default function LandingPage() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    // Charger la préférence depuis localStorage
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    // Initialiser Lucide Icons
+    if (typeof window !== "undefined" && window.lucide) {
+      window.lucide.createIcons();
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+
+    if (typeof window !== "undefined" && window.lucide) {
+      window.lucide.createIcons();
+    }
+  };
+
   return (
     <Fragment>
-      {/* HEAD pour CDNs */}
+      {/* HEAD pour CDN */}
       <Head>
-        {/* Tailwind CDN */}
         <script src="https://cdn.tailwindcss.com"></script>
-        {/* DaisyUI CDN */}
         <script src="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.js"></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
       </Head>
 
-      <div className="bg-white text-gray-900">
+      <div className="bg-base-100 text-base-content">
         {/* HEADER */}
-        <header className="fixed top-0 left-0 w-full bg-white shadow z-50">
+        <header className="fixed top-0 left-0 w-full bg-base-100 shadow z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="text-2xl font-bold text-blue-600">StudenBoard</div>
+            <div className="text-2xl font-bold text-primary">StudenBoard</div>
             <div className="flex gap-4">
-              <a href="/login" className="btn btn-outline btn-secondary">Se connecter</a>
-              <a href="/register" className="btn btn-primary">S’inscrire</a>
+              <button onClick={toggleTheme} className="btn btn-circle">
+                {theme === "light" ? (
+                  <FiMoon size={20} color="#000"/>
+                ) : (
+                  <IoSunnyOutline size={20} color="#ffd700"/>
+                )}
+              </button>
+              
+              <a href="/login" className="btn btn-sm btn-outline btn-secondary">
+                Se connecter
+              </a>
+              <a href="/register" className="btn btn-sm btn-primary">
+                S’inscrire
+              </a>
             </div>
           </div>
         </header>
@@ -40,13 +82,17 @@ export default function LandingPage() {
             <h1 className="text-5xl font-extrabold mb-6 leading-tight">
               Organise ta vie d’étudiant facilement 🎓
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg mb-8 text-base-content/80">
               Planifie tes cours, suis tes notes et gère ton emploi du temps depuis une seule plateforme. 
               StudenBoard t’aide à rester concentré sur l’essentiel.
             </p>
             <div className="flex gap-4 flex-wrap">
-              <a href="/register" className="btn btn-primary btn-lg">Essayer gratuitement</a>
-              <a href="/login" className="btn btn-outline btn-secondary btn-lg">Se connecter</a>
+              <a href="/register" className="btn btn-primary ">
+                Essayer gratuitement
+              </a>
+              <a href="/login" className="btn btn-outline btn-secondary ">
+                Se connecter
+              </a>
             </div>
           </motion.div>
 
@@ -61,7 +107,7 @@ export default function LandingPage() {
         </section>
 
         {/* CHIFFRES CLÉS */}
-        <section className="bg-blue-50 py-16">
+        <section className="bg-base-200 py-16">
           <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             {[
               { value: "+10 000", label: "Étudiants actifs" },
@@ -69,8 +115,8 @@ export default function LandingPage() {
               { value: "100 %", label: "Compatible mobile & web" },
             ].map((item, index) => (
               <div key={index}>
-                <h3 className="text-4xl font-bold text-blue-600">{item.value}</h3>
-                <p className="text-gray-700 mt-2">{item.label}</p>
+                <h3 className="text-4xl font-bold text-primary">{item.value}</h3>
+                <p className="text-base-content/80 mt-2">{item.label}</p>
               </div>
             ))}
           </div>
@@ -84,61 +130,33 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {[
-              {
-                title: "Gestion des matières",
-                desc: "Ajoute, organise et consulte toutes tes matières facilement.",
-              },
-              {
-                title: "Emploi du temps intelligent",
-                desc: "Planifie tes cours et reçois des rappels automatiques.",
-              },
-              {
-                title: "Suivi des notes",
-                desc: "Suis tes moyennes et vois ton évolution par semestre.",
-              },
-              {
-                title: "Statistiques claires",
-                desc: "Un tableau de bord qui t’aide à mieux t’organiser.",
-              },
+              { title: "Gestion des matières", desc: "Ajoute, organise et consulte toutes tes matières facilement." },
+              { title: "Emploi du temps intelligent", desc: "Planifie tes cours et reçois des rappels automatiques." },
+              { title: "Suivi des notes", desc: "Suis tes moyennes et vois ton évolution par semestre." },
+              { title: "Statistiques claires", desc: "Un tableau de bord qui t’aide à mieux s’organiser." },
             ].map((feature, index) => (
-              <div key={index} className="bg-white shadow-md rounded-2xl p-6 text-center hover:shadow-lg transition">
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.desc}</p>
+              <div key={index} className="bg-base-100 shadow-md rounded-2xl p-6 text-center hover:shadow-lg transition">
+                <h3 className="text-xl font-semibold mb-2 text-base-content">{feature.title}</h3>
+                <p className="text-base-content/80">{feature.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* AVIS ÉTUDIANTS */}
-        <section className="bg-blue-50 py-20">
+        <section className="bg-base-200 py-20">
           <div className="max-w-7xl mx-auto px-6 text-center">
             <h2 className="text-4xl font-bold mb-10">Ce que disent nos étudiants</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               {[
-                {
-                  name: "Sanders Tano ",
-                  text: "StudenBoard a complètement changé ma façon d’étudier. Je suis beaucoup plus organisée !",
-                  img: "/imgs/PhotoSanders.jpg",
-                },
-                {
-                  name: "Yasser Sankara",
-                  text: "L’application est claire, rapide et super utile. Je recommande à tous les étudiants.",
-                  img: "/imgs/PhotoSankara.jpg",
-                },
-                {
-                  name: "Mohamed Kaboré",
-                  text: "J’adore le design et les fonctionnalités. Tout est pensé pour nous faciliter la vie.",
-                  img: "/imgs/PhotoKabore.jpg",
-                },
+                { name: "Sanders Tano", text: "StudenBoard a complètement changé ma façon d’étudier. Je suis beaucoup plus organisée !", img: "/imgs/PhotoSanders.jpg" },
+                { name: "Yasser Sankara", text: "L’application est claire, rapide et super utile. Je recommande à tous les étudiants.", img: "/imgs/PhotoSankara.jpg" },
+                { name: "Mohamed Kaboré", text: "J’adore le design et les fonctionnalités. Tout est pensé pour nous faciliter la vie.", img: "/imgs/PhotoKabore.jpg" },
               ].map((review, index) => (
-                <div key={index} className="bg-white shadow-md rounded-2xl p-6">
-                  <img
-                    src={review.img}
-                    alt={review.name}
-                    className="w-16 h-16 mx-auto rounded-full mb-4"
-                  />
-                  <p className="text-gray-700 italic mb-4">“{review.text}”</p>
-                  <h4 className="font-semibold text-blue-600">{review.name}</h4>
+                <div key={index} className="bg-base-100 shadow-md rounded-2xl p-6">
+                  <img src={review.img} alt={review.name} className="w-16 h-16 mx-auto rounded-full mb-4" />
+                  <p className="text-base-content/80 italic mb-4">“{review.text}”</p>
+                  <h4 className="font-semibold text-primary">{review.name}</h4>
                 </div>
               ))}
             </div>
@@ -148,20 +166,21 @@ export default function LandingPage() {
         {/* CTA FINAL */}
         <section className="py-20 text-center">
           <h2 className="text-4xl font-bold mb-6">Commence dès aujourd’hui</h2>
-          <p className="text-gray-600 mb-8">
+          <p className="text-base-content/80 mb-8">
             Rejoins des milliers d’étudiants qui simplifient leur quotidien avec StudenBoard.
           </p>
-          <a href="/register" className="btn btn-primary btn-lg">Créer un compte gratuitement</a>
+          <a href="/register" className="btn btn-primary btn-lg">
+            Créer un compte gratuitement
+          </a>
         </section>
 
         {/* FOOTER */}
-        <footer className="bg-gray-100 py-10 text-center text-gray-500">
+        <footer className="bg-base-200 py-10 text-center text-base-content/70">
           <div className="flex justify-center gap-6 mb-4 text-2xl">
-            
             <a href="https://wa.me/2250500802026" title="Whatsapp" target="_blank" className="hover:text-green-500">
               <FaWhatsapp />
             </a>
-            <a href="mailto:goubadesire0@gmail.com" title="E-mail" target="_blanc" className="hover:text-red-500">
+            <a href="mailto:goubadesire0@gmail.com" title="E-mail" target="_blank" className="hover:text-red-500">
               <FaEnvelope />
             </a>
             <a href="https://goubadesire.github.io/portfolio/" target="_blank" title="Portfolio" className="hover:text-blue-500">

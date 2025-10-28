@@ -20,6 +20,15 @@ export default function DevoirsPage() {
   const [statut, setStatut] = useState("en cours");
   const [matiereId, setMatiereId] = useState("");
 
+  const handleChange = (e) =>{
+    const {name, value} = e.target
+    if(name === 'titre') setTitre(value)
+    else if(name === 'description') setDescription(value)  
+    else if(name === 'dateLimite') setDateLimite(value)
+    else if(name === 'statut') setStatut(value)
+
+  }
+
   const sessionUser = getUser();
 
   useEffect(() => {
@@ -147,10 +156,10 @@ export default function DevoirsPage() {
                 {isEditMode ? "Modifier le devoir" : "Nouveau devoir"}
               </h2>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                <input type="text" className="input input-bordered w-full" placeholder="Titre" value={titre} onChange={(e) => setTitre(e.target.value)} required />
-                <textarea className="input input-bordered w-full" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} required />
-                <input type="date" className="input input-bordered w-full" value={dateLimite} onChange={(e) => setDateLimite(e.target.value)} required />
-                <select className="input input-bordered w-full" value={statut} onChange={(e) => setStatut(e.target.value)}>
+                <input type="text" className="input input-bordered w-full" placeholder="Titre" name="titre" value={titre} onChange={handleChange} required />
+                <textarea className="input input-bordered w-full" placeholder="Description" name="description" value={description} onChange={handleChange} required />
+                <input type="date" className="input input-bordered w-full" value={dateLimite} name="dateLimite" onChange={(e) => setDateLimite(e.target.value)} required />
+                <select className="input input-bordered w-full" value={statut} name="statut" onChange={handleChange}>
                   <option value="en cours">En cours</option>
                   <option value="terminé">Terminé</option>
                   <option value="en retard">En retard</option>

@@ -5,6 +5,7 @@ import AuthGuard from "../components/AuthGuard"
 import { getUser } from "@/lib/session"
 import { FaTrash, FaEdit } from "react-icons/fa"
 
+
 export default function MatieresPage() {
   const [matieres, setMatieres] = useState([])
   const [nom, setNom] = useState("")
@@ -15,6 +16,12 @@ export default function MatieresPage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [currentMatiere, setCurrentMatiere] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  const handleChange = (e) =>{
+    const {name, value} = e.target
+    if(name === 'nom') setNom(value)
+    else if(name === 'coefficient') setCoefficient(value)
+  }
 
   // ✅ Mémoisation de l'utilisateur pour éviter les re-renders inutiles
   const user = useMemo(() => getUser(), [])
@@ -147,7 +154,8 @@ export default function MatieresPage() {
                   placeholder="Nom"
                   className="input input-bordered w-full"
                   value={nom}
-                  onChange={e => setNom(e.target.value)}
+                  name="nom"
+                  onChange={handleChange}
                   required
                 />
                 <input
@@ -155,7 +163,8 @@ export default function MatieresPage() {
                   placeholder="Coefficient"
                   className="input input-bordered w-full"
                   value={coefficient}
-                  onChange={e => setCoefficient(e.target.value)}
+                  name="coefficient"
+                  onChange={handleChange}
                   required
                 />
                 <select

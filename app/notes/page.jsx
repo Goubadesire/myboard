@@ -15,7 +15,14 @@ export default function NotesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentNote, setCurrentNote] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 🔹 nouveau state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const {name, value} = e.target
+    if(name === 'valeur') setValeur(value)
+    else if(name === 'coefficient') setCoefficient(value) 
+  }
+
 
   const sessionUser = getUser();
 
@@ -175,8 +182,8 @@ export default function NotesPage() {
                   ))}
                 </select>
 
-                <input type="number" placeholder="Valeur" className="input input-bordered w-full" value={valeur} onChange={(e) => setValeur(e.target.value)} required />
-                <input type="number" placeholder="Coefficient" className="input input-bordered w-full" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} required />
+                <input type="number" placeholder="Valeur" className="input input-bordered w-full" value={valeur} name="valeur" onChange={handleChange} required />
+                <input type="number" placeholder="Coefficient" className="input input-bordered w-full" value={coefficient} name="coefficient" onChange={handleChange} required />
 
                 <div className="flex justify-end gap-2 mt-2">
                   <button type="button" className="btn btn-ghost" onClick={resetModal}>Annuler</button>

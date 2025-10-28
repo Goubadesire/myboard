@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import Header from "./header";
 import Sidebar from "./sidebar";
@@ -8,7 +9,7 @@ import { getUser } from "@/lib/session";
 export default function MainLayout({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState("light");
-  const [profile, setProfile] = useState(null); // 🔹 Profil utilisateur
+  const [profile, setProfile] = useState(null); 
 
   // Charger la préférence thème
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function MainLayout({ children }) {
             onMenuClick={() => setIsOpen(!isOpen)}
             toggleTheme={toggleTheme}
             theme={theme}
-            profile={profile} // 🔹 Passe aussi le profil au Header si besoin
+            profile={profile} 
           />
         </header>
 

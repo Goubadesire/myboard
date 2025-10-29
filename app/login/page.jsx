@@ -3,12 +3,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"
 import Link from "next/link"
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [message, setMessage] = useState("")
   const router = useRouter()
 
   const handleChange = (e) => {
@@ -29,12 +30,13 @@ export default function LoginPage() {
 
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify({ email: data.user.email, name: data.user.name }))
-        router.push("/dashboard") // redirection si login OK
+        toast.success("Connexion réussie 🎉", { position: "top-center", autoClose: 1500 })
+        setTimeout(() => router.push("/dashboard"), 1500)
       } else {
-        setMessage(data.error)
+        toast.error(data.error || "Email ou mot de passe incorrect", { position: "top-center" })
       }
     } catch (err) {
-      setMessage("Erreur serveur")
+      toast.error("Erreur serveur", { position: "top-center" })
     }
   }
 
@@ -76,10 +78,8 @@ export default function LoginPage() {
             aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
            >
             {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
-
           </button>
         </div>
-        
 
         <button type="submit" className="btn btn-primary w-full">Se connecter</button>
         <p className="mt-4 text-center text-sm text-gray-600">
@@ -88,10 +88,12 @@ export default function LoginPage() {
             S'inscrire
           </Link>
         </p>
-        {message && <p className="mt-4 text-center text-red-500">{message}</p>}
         <p className="mt-4 text-center text-sm text-gray-600">
           <Link href='/home' className="text-info font-semibold">Accueil</Link>
         </p>
+
+        {/* ✅ Toast Container */}
+        <ToastContainer />
       </form>
     </div>
   )

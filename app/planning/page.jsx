@@ -160,7 +160,9 @@ export default function EmploiDuTempsPage() {
                     <option key={j} value={j}>{j}</option>
                   ))}
                 </select>
+                <label htmlFor="">Heure de debut</label>
                 <input type="time" className="input input-bordered w-full" value={heureDebut} onChange={(e) => setHeureDebut(e.target.value)} required />
+                <label htmlFor="">Heure de fin</label>
                 <input type="time" className="input input-bordered w-full" value={heureFin} onChange={(e) => setHeureFin(e.target.value)} required />
                 <select className="input input-bordered w-full" value={matiereId} onChange={(e) => setMatiereId(e.target.value)} required>
                   <option value="">Sélectionnez une matière</option>

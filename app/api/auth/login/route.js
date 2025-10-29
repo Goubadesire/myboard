@@ -11,7 +11,7 @@ export async function POST(req) {
       .from("users")
       .select("*")
       .eq("email", email)
-      .single()
+      .single();
 
     if (error || !user) {
       return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 })
@@ -20,7 +20,7 @@ export async function POST(req) {
     // Vérifie le mot de passe
     const isValid = await bcrypt.compare(password, user.password)
     if (!isValid) {
-      return NextResponse.json({ error: "Mot de passe incorrect" }, { status: 401 })
+      return NextResponse.json({ error: "Email ou mot de passe incorrect" }, { status: 401 })
     }
 
     // ✅ Crée une réponse et stocke la session utilisateur dans les cookies

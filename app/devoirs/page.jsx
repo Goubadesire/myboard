@@ -19,15 +19,15 @@ export default function DevoirsPage() {
   const [dateLimite, setDateLimite] = useState("");
   const [statut, setStatut] = useState("en cours");
   const [matiereId, setMatiereId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🔹 loader
 
-  const handleChange = (e) =>{
-    const {name, value} = e.target
-    if(name === 'titre') setTitre(value)
-    else if(name === 'description') setDescription(value)  
-    else if(name === 'dateLimite') setDateLimite(value)
-    else if(name === 'statut') setStatut(value)
-
-  }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "titre") setTitre(value);
+    else if (name === "description") setDescription(value);
+    else if (name === "dateLimite") setDateLimite(value);
+    else if (name === "statut") setStatut(value);
+  };
 
   const sessionUser = getUser();
 
@@ -73,6 +73,8 @@ export default function DevoirsPage() {
     e.preventDefault();
     if (!titre || !description || !dateLimite || !matiereId) return alert("Veuillez remplir tous les champs");
 
+    setIsSubmitting(true); // 🔹 désactive le bouton et affiche le loader
+
     const method = isEditMode ? "PUT" : "POST";
     const url = isEditMode ? `/api/devoirs?id=${currentDevoir.id}` : "/api/devoirs";
 
@@ -83,6 +85,7 @@ export default function DevoirsPage() {
         body: JSON.stringify({ titre, description, date_limite: dateLimite, statut, matiere_id: matiereId }),
       });
       const data = await res.json();
+
       if (data.devoir) {
         if (isEditMode) {
           setDevoirs((prev) => prev.map((d) => (d.id === data.devoir.id ? data.devoir : d)));
@@ -95,6 +98,8 @@ export default function DevoirsPage() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false); // 🔹 réactive le bouton
     }
   };
 
@@ -172,7 +177,19 @@ export default function DevoirsPage() {
                 </select>
                 <div className="flex justify-end gap-2 mt-2">
                   <button type="button" className="btn btn-ghost" onClick={resetModal}>Annuler</button>
-                  <button type="submit" className="btn btn-primary">{isEditMode ? "Mettre à jour" : "Ajouter"}</button>
+                  <button
+                    type="submit"
+                    className={`btn btn-primary flex items-center justify-center gap-2 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting && (
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                      </svg>
+                    )}
+                    {isEditMode ? "Mettre à jour" : "Ajouter"}
+                  </button>
                 </div>
               </form>
             </div>
@@ -188,15 +205,12 @@ export default function DevoirsPage() {
 
             return (
               <div key={d.id} className={`relative flex flex-col p-4 rounded-xl border border-base-300 shadow hover:shadow-lg transition-shadow duration-200 ${color}`}>
-                {/* Badge statut */}
                 <span className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-semibold ${statutColor}`}>
                   {d.statut}
                 </span>
-
                 <div className="font-bold text-lg mb-1">{d.titre}</div>
                 <div className="text-sm mb-2">{d.description}</div>
                 <div className="text-xs text-gray-600 mb-2">{d.date_limite} - {matiere?.nom || "?"}</div>
-
                 <div className="flex gap-2 mt-auto">
                   <button onClick={() => handleEdit(d)} className="btn btn-sm btn-outline btn-primary rounded-lg"><FaEdit /></button>
                   <button onClick={() => handleDelete(d.id)} className="btn btn-sm btn-outline btn-error rounded-lg"><FaTrash /></button>

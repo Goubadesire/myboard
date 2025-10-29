@@ -51,7 +51,7 @@ export default function LandingPage() {
         {/* HEADER */}
         <header className="fixed top-0 left-0 w-full bg-base-100 shadow z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="text-2xl font-bold text-primary">StudenBoard</div>
+            <div className="text-2xl font-bold text-primary">StudentBoard</div>
             <div className="flex gap-4">
               <button onClick={toggleTheme} className="btn btn-circle">
                 {theme === "light" ? (

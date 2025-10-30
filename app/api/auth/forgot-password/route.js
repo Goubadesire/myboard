@@ -32,8 +32,9 @@ export async function POST(req) {
     await supabase.from("reset_tokens").insert([{ user_id: user.id, token, expires_at }]);
 
     // Prépare le lien de réinitialisation
-    const resetLink = `${process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, '')}/reset-password?token=${token}`;
-    console.log("Reset link:", resetLink);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://myboard-sandy.vercel.app";
+    const resetLink = `${baseUrl}/reset-password?token=${token}`;
+
 
 
     // Envoi l’email

@@ -52,7 +52,11 @@ export async function POST(req) {
 
     return new Response(JSON.stringify({ message: "Email envoyé avec succès ✅" }), { status: 200 });
   } catch (err) {
+    console.error(err)
+    return Response.json({ error: err.message }, { status: 500 })
     console.error(err);
     return new Response(JSON.stringify({ error: "Erreur interne du serveur" }), { status: 500 });
+    
+
   }
 }

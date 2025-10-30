@@ -4,6 +4,11 @@ import { transporter } from "@/lib/email"; // on utilise le transporteur Gmail
 
 export async function POST(req) {
   try {
+    console.log("EMAIL:", process.env.SMTP_EMAIL)
+console.log("PASS:", process.env.SMTP_PASSWORD ? "SET" : "EMPTY")
+console.log("HOST:", process.env.SMTP_HOST)
+console.log("PORT:", process.env.SMTP_PORT)
+
     const { email } = await req.json();
 
     if (!email) {

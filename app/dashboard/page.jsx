@@ -4,19 +4,19 @@ import { useState, useEffect, useMemo } from "react";
 import MainLayout from "../components/mainLayout";
 import AuthGuard from "../components/AuthGuard";
 import { getUser } from "@/lib/session";
-import { Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
+import { Bar } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title } from "chart.js";
 import { FaCalendarAlt, FaProjectDiagram, FaGraduationCap } from "react-icons/fa";
 
-ChartJS.register(ArcElement, Tooltip, Legend, Title);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title);
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [devoirs, setDevoirs] = useState([]);
-  const [emplois, setEmplois] = useState([]);
   const [matieres, setMatieres] = useState([]);
   const [notes, setNotes] = useState([]);
   const [semestres, setSemestres] = useState([]);
+  const [citation, setCitation] = useState(null);
 
   const sessionUser = getUser();
 
@@ -26,24 +26,21 @@ export default function DashboardPage() {
 
     const fetchAll = async () => {
       try {
-        const [dRes, eRes, mRes, nRes, sRes] = await Promise.all([
+        const [dRes, mRes, nRes, sRes] = await Promise.all([
           fetch("/api/devoirs", { headers: { email: sessionUser.email } }),
-          fetch("/api/emplois", { headers: { email: sessionUser.email } }),
           fetch("/api/matieres", { headers: { email: sessionUser.email } }),
           fetch("/api/notes", { headers: { email: sessionUser.email } }),
           fetch("/api/semestres", { headers: { email: sessionUser.email } }),
         ]);
 
-        const [dData, eData, mData, nData, sData] = await Promise.all([
+        const [dData, mData, nData, sData] = await Promise.all([
           dRes.json(),
-          eRes.json(),
           mRes.json(),
           nRes.json(),
           sRes.json(),
         ]);
 
         if (dData.devoirs) setDevoirs(dData.devoirs);
-        if (eData.emplois) setEmplois(eData.emplois);
         if (mData.matieres) setMatieres(mData.matieres);
         if (nData.notes) setNotes(nData.notes);
         if (sData.semestres) setSemestres(sData.semestres);
@@ -54,6 +51,24 @@ export default function DashboardPage() {
 
     fetchAll();
   }, [sessionUser?.email]);
+
+  useEffect(() => {
+  const fetchCitation = async () => {
+    try {
+      const res = await fetch("/api/citations");
+      const data = await res.json();
+      setCitation(data);
+    } catch (err) {
+      console.error("Erreur citation :", err);
+    }
+  };
+
+  fetchCitation(); // au chargement
+
+  const interval = setInterval(fetchCitation, 3600000); // toutes les heures
+  return () => clearInterval(interval);
+}, []);
+
 
   // Moyennes par semestre
   const moyennesSemestres = useMemo(() => {
@@ -98,69 +113,54 @@ export default function DashboardPage() {
     });
   }, [matieres, notes]);
 
-  // Données du graphique
-  const doughnutData = useMemo(() => {
-    const colors = moyenneParMatiere.map(val => {
-      if (val < 9) return "rgba(239, 68, 68, 0.9)"; // Rouge
-      if (val < 12) return "rgba(251, 191, 36, 0.9)"; // Jaune
-      return "rgba(34, 197, 94, 0.9)"; // Vert
-    });
-
+  // Données du graphique en barre horizontale
+  const barData = useMemo(() => {
     return {
       labels: matieres.map(m => m.nom),
       datasets: [
         {
           label: "Moyenne par matière",
           data: moyenneParMatiere,
-          backgroundColor: colors,
-          borderColor: "#fff",
-          borderWidth: 2,
-          hoverOffset: 12,
+          backgroundColor: moyenneParMatiere.map(val => {
+            if (val < 9) return "rgba(239, 68, 68, 0.8)";
+            if (val < 12) return "rgba(251, 191, 36, 0.8)";
+            return "rgba(34, 197, 94, 0.8)";
+          }),
         },
       ],
     };
   }, [matieres, moyenneParMatiere]);
 
-  const doughnutOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "70%",
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: {
-            boxWidth: 14,
-            padding: 10,
-            font: { size: 12 },
-          },
-        },
-        title: {
-          display: true,
-          text: "Moyenne par matière",
-          font: { size: 16 },
-        },
-        tooltip: {
-          backgroundColor: "rgba(0,0,0,0.8)",
-          titleFont: { size: 14 },
-          bodyFont: { size: 13 },
-          callbacks: {
-            label: context => `${context.label}: ${context.parsed} / 20`,
-          },
+  const barOptions = useMemo(() => ({
+    indexAxis: "y",
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: "Moyenne par matière", font: { size: 16 } },
+      tooltip: {
+        callbacks: {
+          label: context => `${context.parsed.x} / 20`,
         },
       },
-      animation: {
-        animateRotate: true,
-        animateScale: true,
-      },
-    }),
-    []
-  );
+    },
+    scales: {
+      x: { max: 20 },
+    },
+  }), []);
 
   const today = new Date();
+
+  // Statut dynamique des devoirs
   const devoirsAvenir = useMemo(() => {
     return devoirs
-      .filter(d => new Date(d.date_limite) >= today)
+      .map(d => {
+        const deadline = new Date(d.date_limite);
+        let status = "En cours";
+        if (deadline < today) status = "En retard";
+        if (d.termine) status = "Terminé"; // si tu gardes un champ terminé dans la BDD
+        return { ...d, status };
+      })
+      .filter(d => new Date(d.date_limite) >= today || d.status === "En retard")
       .sort((a, b) => new Date(a.date_limite) - new Date(b.date_limite))
       .slice(0, 5);
   }, [devoirs]);
@@ -170,35 +170,26 @@ export default function DashboardPage() {
       <MainLayout>
         <h1 className="text-2xl font-bold text-primary mb-6">Dashboard</h1>
 
-        {/* Moyennes par semestre */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Cartes moyennes */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {Object.entries(moyennesSemestres).map(([semestreId, moyenne]) => {
             const semestreNom =
               semestres.find(s => s.id === semestreId)?.nom || `Semestre ${semestreId}`;
             return (
               <div
                 key={semestreId}
-                className="card p-6 rounded-2xl shadow-lg bg-blue-50 flex items-center gap-4 hover:scale-105 transition-all duration-300 animate-fadeInUp"
+                className="card p-6 rounded-2xl shadow-lg bg-blue-50 flex flex-col items-center gap-2 hover:scale-105 transition-all duration-300 animate-fadeInUp"
               >
-                <FaGraduationCap className="text-blue-700 text-3xl" />
-                <div>
-                  <h3 className="text-lg font-semibold text-blue-700 mb-1">
-                    {semestreNom}
-                  </h3>
-                  <p className="text-2xl font-bold text-blue-900">{moyenne} / 20</p>
-                  <p className="text-sm text-blue-600 mt-1">Moyenne générale</p>
-                </div>
+                <h3 className="text-lg font-semibold text-blue-700">{semestreNom}</h3>
+                <p className="text-3xl font-bold text-blue-900">{moyenne}</p>
               </div>
             );
           })}
 
-          <div className="card p-6 rounded-2xl shadow-lg bg-green-50 flex items-center gap-4 hover:scale-105 transition-all duration-300 animate-fadeInUp">
-            <FaGraduationCap className="text-green-700 text-3xl" />
-            <div>
-              <h3 className="text-lg font-semibold text-green-700 mb-1">Année</h3>
-              <p className="text-2xl font-bold text-green-900">{moyenneAnnuelle} / 20</p>
-              <p className="text-sm text-green-600 mt-1">Moyenne générale annuelle</p>
-            </div>
+          {/* Moyenne annuelle */}
+          <div className="card p-6 rounded-2xl shadow-lg bg-green-50 flex flex-col items-center gap-2 hover:scale-105 transition-all duration-300 animate-fadeInUp">
+            <h3 className="text-lg font-semibold text-green-700">Année</h3>
+            <p className="text-3xl font-bold text-green-900">{moyenneAnnuelle}</p>
           </div>
         </div>
 
@@ -206,15 +197,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Graphique */}
           <div className="col-span-2 bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 h-[380px]">
-            <h2 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <FaProjectDiagram /> Moyenne par matière
-            </h2>
-            <div className="h-[300px]">
-              <Doughnut data={doughnutData} options={doughnutOptions} />
-            </div>
+            <Bar data={barData} options={barOptions} />
           </div>
 
-          {/* Prochains devoirs */}
+          {/* Prochains devoirs avec statut dynamique */}
           <div className="bg-yellow-50 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
             <h2 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center gap-2">
               <FaCalendarAlt /> Prochains devoirs
@@ -226,18 +212,35 @@ export default function DashboardPage() {
                 devoirsAvenir.map(d => (
                   <li
                     key={d.id}
-                    className="p-3 bg-yellow-100 rounded-lg flex justify-between items-center hover:bg-yellow-200 transition-colors duration-200"
+                    className={`p-3 rounded-lg flex justify-between items-center transition-colors duration-200
+                      ${d.status === "En cours" ? "bg-yellow-100 hover:bg-yellow-200" : ""}
+                      ${d.status === "En retard" ? "bg-red-100 hover:bg-red-200" : ""}
+                      ${d.status === "Terminé" ? "bg-green-100 hover:bg-green-200" : ""}`}
                   >
                     <div>
-                      <div className="font-medium">{d.titre}</div>
-                      <div className="text-xs text-yellow-700">{d.date_limite}</div>
+                      <div className="font-medium text-gray-600">{d.titre}</div>
+                      <div className="text-xs text-gray-600">{d.date_limite}</div>
+                    </div>
+                    <div className={`text-xs font-semibold
+                      ${d.status === "En cours" ? "text-yellow-800" : ""}
+                      ${d.status === "En retard" ? "text-red-700" : ""}
+                      ${d.status === "Terminé" ? "text-green-700" : ""}`}
+                    >
+                      {d.status}
                     </div>
                   </li>
                 ))
               )}
             </ul>
           </div>
+          
         </div>
+        {citation && (
+            <div className="p-4 mt-6 bg-indigo-50 rounded-2xl shadow-lg text-center">
+              <p className="italic text-indigo-700 text-lg">"{citation.texte}"</p>
+              <p className="mt-2 font-semibold text-indigo-900">- {citation.auteur}</p>
+            </div>
+          )}
       </MainLayout>
     </AuthGuard>
   );

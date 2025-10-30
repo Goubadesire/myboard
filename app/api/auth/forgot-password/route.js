@@ -1,11 +1,17 @@
+import { supabase } from "@/lib/supabaseClient";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+
 export async function POST(req) {
   try {
-    console.log("EMAIL:", process.env.SMTP_EMAIL)
-    console.log("PASS:", process.env.SMTP_PASSWORD ? "SET" : "EMPTY")
-    console.log("HOST:", process.env.SMTP_HOST)
-    console.log("PORT:", process.env.SMTP_PORT)
+    // --- Debug variables d'environnement ---
+    console.log("EMAIL:", process.env.SMTP_EMAIL);
+    console.log("PASS:", process.env.SMTP_PASSWORD ? "SET" : "EMPTY");
+    console.log("HOST:", process.env.SMTP_HOST);
+    console.log("PORT:", process.env.SMTP_PORT);
 
     const { email } = await req.json();
+
     if (!email) {
       return new Response(JSON.stringify({ error: "L'email est requis" }), { status: 400 });
     }
@@ -25,17 +31,20 @@ export async function POST(req) {
     const token = crypto.randomBytes(32).toString("hex");
     const expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
+    // Supprime les anciens tokens
     await supabase.from("reset_tokens").delete().eq("user_id", user.id);
+
+    // Insère le nouveau token
     await supabase.from("reset_tokens").insert([{ user_id: user.id, token, expires_at }]);
 
+    // Prépare le lien de réinitialisation
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://myboard-sandy.vercel.app";
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
-    // --- transporter créé ici, PAS à l'import ---
-    const nodemailer = require("nodemailer");
+    // --- Création du transporteur Nodemailer ici, côté fonction POST ---
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
+      port: Number(process.env.SMTP_PORT),
       secure: false, // true si port 465
       auth: {
         user: process.env.SMTP_EMAIL,
@@ -43,6 +52,7 @@ export async function POST(req) {
       },
     });
 
+    // Envoi de l’email
     await transporter.sendMail({
       from: `"Support" <${process.env.SMTP_EMAIL}>`,
       to: email,
@@ -58,7 +68,7 @@ export async function POST(req) {
     return new Response(JSON.stringify({ message: "Email envoyé avec succès ✅" }), { status: 200 });
 
   } catch (err) {
-    console.error(err)
+    console.error(err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }

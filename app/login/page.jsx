@@ -91,6 +91,9 @@ export default function LoginPage() {
         <p className="mt-4 text-center text-sm text-gray-600">
           <Link href='/home' className="text-info font-semibold">Accueil</Link>
         </p>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          <Link href='/ForgotPasswordPage' className="text-secondary font-semibold">Mot de passe oublié ?</Link>
+        </p>
 
         {/* ✅ Toast Container */}
         <ToastContainer />

@@ -31,17 +31,30 @@ export async function POST(req) {
     const token = crypto.randomBytes(32).toString("hex");
     const expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    // Supprime les anciens tokens
-    await supabase.from("reset_tokens").delete().eq("user_id", user.id);
+    // --- Supprime les anciens tokens et log ---
+    const { data: deleted, error: deleteError } = await supabase
+      .from("reset_tokens")
+      .delete()
+      .eq("user_id", user.id);
 
-    // Insère le nouveau token
-    await supabase.from("reset_tokens").insert([{ user_id: user.id, token, expires_at }]);
+    console.log("Tokens supprimés :", deleted, "Erreur suppression :", deleteError);
+
+    // --- Insère le nouveau token et log ---
+    const { data: inserted, error: insertError } = await supabase
+      .from("reset_tokens")
+      .insert([{ user_id: user.id,email:user.email,  token, expires_at }]);
+
+    console.log("Token inséré :", inserted, "Erreur insertion :", insertError);
+
+    if (insertError) {
+      return new Response(JSON.stringify({ error: "Impossible de créer le token" }), { status: 500 });
+    }
 
     // Prépare le lien de réinitialisation
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://myboard-sandy.vercel.app";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
-    // --- Création du transporteur Nodemailer ici, côté fonction POST ---
+    // --- Création du transporteur Nodemailer ---
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),

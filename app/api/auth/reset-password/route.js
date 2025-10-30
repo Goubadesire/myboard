@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 export async function POST(req) {
   try {
     const { token, password } = await req.json();
+    const cleanedToken = token.trim();
+    console.log("Token reçu :", token);
 
     // 1️⃣ Vérifie que token et password sont fournis
     if (!token || !password) {
@@ -14,7 +16,7 @@ export async function POST(req) {
     const { data: resetToken, error: tokenError } = await supabase
       .from("reset_tokens")
       .select("user_id, expires_at")
-      .eq("token", token)
+      .eq("token", cleanedToken)
       .single();
 
     if (tokenError || !resetToken) {

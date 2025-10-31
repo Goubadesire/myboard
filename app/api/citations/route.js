@@ -14,6 +14,24 @@ const citations = [
     { texte: "Le savoir est le début de la sagesse.", auteur: "Socrate" },
     { texte: "Ne cesse jamais d’apprendre, car la vie ne cesse jamais d’enseigner.", auteur: "Unknown" },
     { texte: "La discipline est le pont entre les objectifs et les réalisations.", auteur: "Jim Rohn" },
+    { texte: "Le courage ne rugit pas toujours. Parfois, le courage est la petite voix à la fin de la journée qui dit : j’essaierai encore demain.", auteur: "Mary Anne Radmacher" },
+    { texte: "Le plus grand risque est de ne prendre aucun risque.", auteur: "Mark Zuckerberg" },
+    { texte: "La créativité, c’est l’intelligence qui s’amuse.", auteur: "Albert Einstein" },
+    { texte: "Le succès n’est pas la clé du bonheur. Le bonheur est la clé du succès.", auteur: "Albert Schweitzer" },
+    { texte: "Fais de ta vie un rêve, et d’un rêve, une réalité.", auteur: "Antoine de Saint-Exupéry" },
+    { texte: "Apprendre l'informatique, c'est construire le futur avec la logique du présent.", auteur: "Reine"},
+    { texte: "Un grain de riz n'a jamais eu raison au tribunal des poulets.", auteur: "Yasmine Kouadio"},
+    { texte: "La discipline est le carburant de la réussite.", auteur: "Kabore Mohamed" },
+    { texte: "C'est lorsqu'il veut pleuvoir que 15h ressemble à 19h.", auteur: "Yasmine Kouadio" },
+    { texte: "Le mortier de foutou se lave après l'utilisation.", auteur: "Yasmine Kouadio" },
+    { texte: "Le miroir à les meilleurs photos et vidéos du monde.", auteur: "Yasmine Kouadio" },
+    { texte: "Ils n'ont jamais entendu mes pleurs mais ils verront que ma force est le succès.", auteur: "Yasmine Kouadio" },
+    { texte: "La discipline est le moteur qui enclenche le succès.", auteur: "Kabore Mohamed" },
+    { texte: "C'est pas parcque tu me doit que je vais pas manger ta nourriture.", auteur: "Yasmine Kouadio" },
+    { texte: "Sel 25f peut gâter sauce de 30K.", auteur: "Yasmine Kouadio" },
+    { texte: "Sifflet 50f arrêt voiture de milliard.", auteur: "Yasmine Kouadio" },
+    { texte: "omo 50f lave voiture d'un million.", auteur: "Yasmine Kouadio" },
+
 
 ]
 

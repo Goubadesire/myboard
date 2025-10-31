@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
   fetchCitation(); // au chargement
 
-  const interval = setInterval(fetchCitation, 3600000); // toutes les heures
+  const interval = setInterval(fetchCitation, 300000); // toutes les heures
   return () => clearInterval(interval);
 }, []);
 

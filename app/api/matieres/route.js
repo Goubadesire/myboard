@@ -1,37 +1,47 @@
-// app/api/matieres/route.js
-import { supabase } from "@/lib/supabaseClient"
+import { supabase } from "@/lib/supabaseClient";
 
 // ===========================
 // GET : récupérer les matières d'un utilisateur
 // ===========================
 export async function GET(req) {
   try {
-    const email = req.headers.get("email")
-    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 })
+    const email = req.headers.get("email");
+    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 });
 
     // 🔹 Récupération de l'utilisateur
-    // Optimisation : pourrait être passé depuis le front pour éviter cet appel répétitif
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single()
+    const { data: user } = await supabase.from("users").select("id").eq("email", email).single();
+    if (!user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 });
 
-    if (userError || !user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 })
+    // 🔹 Récupération des matières et coefficient par semestre
+    const { data: matieres, error } = await supabase
+      .from("semester_subjects")
+      .select(`
+        matiere:matieres(id, nom),
+        semestre_id,
+        coefficient
+      `)
+      .eq("user_id", user.id);
 
-    // 🔹 Récupération des matières
-    // Optimisation : sélectionner uniquement les champs nécessaires pour le front
-    const { data: matieres, error: matieresError } = await supabase
-      .from("matieres")
-      .select("id, nom, coefficient, semestre_id") // au lieu de "*"
-      .eq("user_id", user.id)
+    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
-    if (matieresError) return new Response(JSON.stringify({ error: matieresError.message }), { status: 500 })
+    // 🔹 Transformation pour front
+    const uniqueMatieres = [];
+    const map = new Map();
+    matieres.forEach(item => {
+      if (!map.has(item.matiere.id)) {
+        map.set(item.matiere.id, {
+          id: item.matiere.id,
+          nom: item.matiere.nom,
+          coefficient: item.coefficient, // peut ajuster si tu veux un coefficient par semestre
+        });
+        uniqueMatieres.push(map.get(item.matiere.id));
+      }
+    });
 
-    return new Response(JSON.stringify({ matieres }), { status: 200 })
+    return new Response(JSON.stringify({ matieres: uniqueMatieres }), { status: 200 });
   } catch (err) {
-    console.error("Erreur serveur:", err)
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 })
+    console.error(err);
+    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 });
   }
 }
 
@@ -40,71 +50,82 @@ export async function GET(req) {
 // ===========================
 export async function POST(req) {
   try {
-    const { nom, coefficient, semestre_id } = await req.json()
-    const email = req.headers.get("email")
-    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 })
-    if (!nom || !coefficient || !semestre_id) return new Response(JSON.stringify({ error: "Données manquantes" }), { status: 400 })
+    const { nom, coefficient } = await req.json();
+    const email = req.headers.get("email");
+    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 });
+    if (!nom || !coefficient) return new Response(JSON.stringify({ error: "Données manquantes" }), { status: 400 });
 
-    // 🔹 Récupération de l'utilisateur
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single()
-    if (userError || !user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 })
+    const { data: user } = await supabase.from("users").select("id").eq("email", email).single();
+    if (!user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 });
 
-    // 🔹 Insertion de la matière
-    // Optimisation : sélectionner uniquement les champs nécessaires
+    // 🔹 Créer la matière
     const { data: matiere, error: matiereError } = await supabase
       .from("matieres")
-      .insert([{ nom, coefficient, semestre_id, user_id: user.id }])
-      .select("id, nom, coefficient, semestre_id")
-      .single()
+      .insert([{ nom }])
+      .select("id, nom")
+      .single();
+    if (matiereError) return new Response(JSON.stringify({ error: matiereError.message }), { status: 500 });
 
-    if (matiereError) return new Response(JSON.stringify({ error: matiereError.message }), { status: 500 })
+    // 🔹 Récupérer tous les semestres de l'utilisateur
+    const { data: semestres } = await supabase
+      .from("semestres")
+      .select("id")
+      .eq("user_id", user.id);
 
-    return new Response(JSON.stringify({ matiere }), { status: 200 })
+    // 🔹 Créer les liens dans semester_subjects
+    const links = semestres.map(s => ({
+      semestre_id: s.id,
+      matiere_id: matiere.id,
+      user_id: user.id,
+      coefficient: parseFloat(coefficient)
+    }));
+    const { error: linkError } = await supabase.from("semester_subjects").insert(links);
+    if (linkError) return new Response(JSON.stringify({ error: linkError.message }), { status: 500 });
+
+    return new Response(JSON.stringify({ matiere }), { status: 200 });
   } catch (err) {
-    console.error("Erreur serveur:", err)
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 })
+    console.error(err);
+    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 });
   }
 }
 
 // ===========================
-// PUT : modifier une matière
+// PUT : modifier une matière et son coefficient
 // ===========================
 export async function PUT(req) {
   try {
-    const { nom, coefficient, semestre_id } = await req.json()
-    const { searchParams } = new URL(req.url)
-    const id = searchParams.get("id")
-    const email = req.headers.get("email")
-    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 })
-    if (!id || !nom || !coefficient || !semestre_id) return new Response(JSON.stringify({ error: "Données manquantes" }), { status: 400 })
+    const { nom, coefficient } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const email = req.headers.get("email");
 
-    // 🔹 Récupération de l'utilisateur
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single()
-    if (userError || !user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 })
+    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 });
+    if (!id || !nom || !coefficient) return new Response(JSON.stringify({ error: "Données manquantes" }), { status: 400 });
 
-    // 🔹 Mise à jour de la matière
+    const { data: user } = await supabase.from("users").select("id").eq("email", email).single();
+    if (!user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 });
+
+    // 🔹 Mettre à jour le nom de la matière
     const { data: matiere, error: matiereError } = await supabase
       .from("matieres")
-      .update({ nom, coefficient, semestre_id })
+      .update({ nom })
       .eq("id", id)
-      .eq("user_id", user.id) // s'assure que l'utilisateur ne modifie que ses matières
-      .select("id, nom, coefficient, semestre_id")
-      .single()
+      .select("id, nom")
+      .single();
+    if (matiereError) return new Response(JSON.stringify({ error: matiereError.message }), { status: 500 });
 
-    if (matiereError) return new Response(JSON.stringify({ error: matiereError.message }), { status: 500 })
+    // 🔹 Mettre à jour le coefficient dans tous les semester_subjects
+    const { error: coefError } = await supabase
+      .from("semester_subjects")
+      .update({ coefficient: parseFloat(coefficient) })
+      .eq("matiere_id", id)
+      .eq("user_id", user.id);
+    if (coefError) return new Response(JSON.stringify({ error: coefError.message }), { status: 500 });
 
-    return new Response(JSON.stringify({ matiere }), { status: 200 })
+    return new Response(JSON.stringify({ matiere }), { status: 200 });
   } catch (err) {
-    console.error("Erreur serveur:", err)
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 })
+    console.error(err);
+    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 });
   }
 }
 
@@ -113,32 +134,23 @@ export async function PUT(req) {
 // ===========================
 export async function DELETE(req) {
   try {
-    const { searchParams } = new URL(req.url)
-    const id = searchParams.get("id")
-    const email = req.headers.get("email")
-    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 })
-    if (!id) return new Response(JSON.stringify({ error: "ID manquant" }), { status: 400 })
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const email = req.headers.get("email");
 
-    // 🔹 Récupération de l'utilisateur
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single()
-    if (userError || !user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 })
+    if (!email) return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 });
+    if (!id) return new Response(JSON.stringify({ error: "ID manquant" }), { status: 400 });
 
-    // 🔹 Suppression de la matière
-    const { error: matiereError } = await supabase
-      .from("matieres")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id) // sécurité : ne supprime que ses matières
+    const { data: user } = await supabase.from("users").select("id").eq("email", email).single();
+    if (!user) return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401 });
 
-    if (matiereError) return new Response(JSON.stringify({ error: matiereError.message }), { status: 500 })
+    // 🔹 Supprimer la matière et les liens associés
+    const { error } = await supabase.from("matieres").delete().eq("id", id);
+    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 })
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err) {
-    console.error("Erreur serveur:", err)
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 })
+    console.error(err);
+    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 });
   }
 }

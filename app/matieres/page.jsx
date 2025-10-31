@@ -10,18 +10,11 @@ export default function MatieresPage() {
   const [matieres, setMatieres] = useState([]);
   const [nom, setNom] = useState("");
   const [coefficient, setCoefficient] = useState("");
-  const [semestreId, setSemestreId] = useState("");
   const [semestres, setSemestres] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentMatiere, setCurrentMatiere] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "nom") setNom(value);
-    else if (name === "coefficient") setCoefficient(value);
-  };
 
   const user = useMemo(() => getUser(), []);
 
@@ -52,31 +45,49 @@ export default function MatieresPage() {
     }
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "nom") setNom(value);
+    else if (name === "coefficient") setCoefficient(value);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!nom || !coefficient || !semestreId) return alert("Veuillez remplir toutes les données");
+    if (!nom || !coefficient) return alert("Veuillez remplir toutes les données");
     setIsLoading(true);
 
-    const method = isEditMode ? "PUT" : "POST";
-    const url = isEditMode ? `/api/matieres?id=${currentMatiere.id}` : "/api/matieres";
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          email: user.email
-        },
-        body: JSON.stringify({ nom, coefficient: parseFloat(coefficient), semestre_id: semestreId })
-      });
+      // 1️⃣ Création ou modification de la matière
+      const matiereRes = await fetch(
+        isEditMode ? `/api/matieres?id=${currentMatiere.id}` : "/api/matieres",
+        {
+          method: isEditMode ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json", email: user.email },
+          body: JSON.stringify({ nom, coefficient: parseFloat(coefficient) })
+        }
+      );
+      const matiereData = await matiereRes.json();
+      if (!matiereData.matiere) return alert(matiereData.error);
 
-      const data = await res.json();
-      if (data.matiere) {
-        await fetchMatieres();
-        closeModal();
-      } else {
-        alert(data.error);
-      }
+      const matiereId = matiereData.matiere.id;
+
+      // 2️⃣ Associer la matière à tous les semestres via semester_subjects
+      await Promise.all(
+        semestres.map(async (sem) => {
+          await fetch("/api/semester_subjects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", email: user.email },
+            body: JSON.stringify({
+              matiere_id: matiereId,
+              semestre_id: sem.id,
+              coefficient: parseFloat(coefficient)
+            })
+          });
+        })
+      );
+
+      await fetchMatieres();
+      closeModal();
     } catch (err) {
       console.error(err);
     } finally {
@@ -87,7 +98,6 @@ export default function MatieresPage() {
   const handleEdit = (matiere) => {
     setNom(matiere.nom);
     setCoefficient(matiere.coefficient);
-    setSemestreId(matiere.semestre_id);
     setCurrentMatiere(matiere);
     setIsEditMode(true);
     setIsModalOpen(true);
@@ -117,7 +127,6 @@ export default function MatieresPage() {
     setCurrentMatiere(null);
     setNom("");
     setCoefficient("");
-    setSemestreId("");
   };
 
   return (
@@ -165,26 +174,9 @@ export default function MatieresPage() {
                   onChange={handleChange}
                   required
                 />
-                <select
-                  className="input input-bordered w-full"
-                  value={semestreId}
-                  onChange={e => setSemestreId(e.target.value)}
-                  required
-                >
-                  <option value="">Choisir un semestre</option>
-                  {semestres.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.nom} ({s.annee})
-                    </option>
-                  ))}
-                </select>
 
                 <div className="flex justify-end gap-2 mt-2">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={closeModal}
-                  >
+                  <button type="button" className="btn btn-ghost" onClick={closeModal}>
                     Annuler
                   </button>
                   <button
@@ -192,12 +184,6 @@ export default function MatieresPage() {
                     className={`btn btn-primary flex items-center justify-center gap-2 ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                     disabled={isLoading}
                   >
-                    {isLoading && (
-                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                      </svg>
-                    )}
                     {isEditMode ? "Mettre à jour" : "Ajouter"}
                   </button>
                 </div>
@@ -215,25 +201,15 @@ export default function MatieresPage() {
             >
               <div className="card-body p-5 flex flex-col justify-between">
                 <div>
-                  <h2 className="card-title text-lg font-semibold text-primary">
-                    {m.nom}
-                  </h2>
+                  <h2 className="card-title text-lg font-semibold text-primary">{m.nom}</h2>
                   <p className="text-sm text-gray-500">Coefficient : {m.coefficient}</p>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-4">
-                  <button
-                    onClick={() => handleEdit(m)}
-                    className="btn btn-sm btn-outline btn-primary rounded-lg"
-                    title="Modifier"
-                  >
+                  <button onClick={() => handleEdit(m)} className="btn btn-sm btn-outline btn-primary rounded-lg" title="Modifier">
                     <FaEdit />
                   </button>
-                  <button
-                    onClick={() => handleDelete(m.id)}
-                    className="btn btn-sm btn-outline btn-error rounded-lg"
-                    title="Supprimer"
-                  >
+                  <button onClick={() => handleDelete(m.id)} className="btn btn-sm btn-outline btn-error rounded-lg" title="Supprimer">
                     <FaTrash />
                   </button>
                 </div>

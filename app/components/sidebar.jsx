@@ -6,6 +6,7 @@ import { PiExamDuotone } from "react-icons/pi";
 import { CiCalendarDate } from "react-icons/ci";
 import { MdAdsClick } from "react-icons/md";
 import { TbUserScan } from "react-icons/tb";
+import { FaLandmarkFlag } from "react-icons/fa6";
 import { MdOutlineQuiz } from "react-icons/md";
 import Link from "next/link";
 

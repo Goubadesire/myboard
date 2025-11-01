@@ -31,6 +31,10 @@ const citations = [
     { texte: "Sel 25f peut gâter sauce de 30K.", auteur: "Yasmine Kouadio" },
     { texte: "Sifflet 50f arrêt voiture de milliard.", auteur: "Yasmine Kouadio" },
     { texte: "omo 50f lave voiture d'un million.", auteur: "Yasmine Kouadio" },
+    { texte: "En vrai, travailler dur n'est synonyme de liberté financière ou ma réussite sociale. La vraie liberté financiaire ou réussite sociale réside dans la stratégie ou la mainière de gérer son temps ou le fruit de son travail.", auter: "Kouao Alan"},
+    { texte: "Tu souscris pass nuit tu dit tu as insomnie.", auteur: "Yasmine Kouadio" },
+    { texte: "Si aujourd'hui est lundi c'est que demain sera mardi.", auteur: "Alice" },
+    { texte: "Contrairement au cerveau l'estomac vous avertit lorsqu'il est vide.", auteur: "Michael Zadi" }
 
 
 ]

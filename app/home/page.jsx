@@ -1,27 +1,67 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { motion } from "framer-motion";
 import { BsGlobe } from "react-icons/bs";
 import { IoSunnyOutline } from "react-icons/io5";
 import { FiMoon } from "react-icons/fi";
-import { FaRegUser } from "react-icons/fa";
-import {
-  FaWhatsapp,
-  FaEnvelope,
-} from "react-icons/fa";
+import { FaWhatsapp, FaEnvelope } from "react-icons/fa";
+
+// 🔹 Petit composant utilitaire : compteur animé quand visible
+function CountUpOnView({ end = 0, duration = 1500, prefix = "", suffix = "" }) {
+  const ref = useRef(null);
+  const [value, setValue] = useState(0);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !started.current) {
+            started.current = true;
+            observer.disconnect();
+
+            const start = performance.now();
+            const animate = (now) => {
+              const t = Math.min(1, (now - start) / duration);
+              const eased = 1 - Math.pow(1 - t, 3);
+              const current = Math.floor(end * eased);
+              setValue(current);
+              if (t < 1) requestAnimationFrame(animate);
+              else setValue(end);
+            };
+            requestAnimationFrame(animate);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [end, duration]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {value.toLocaleString("fr-FR")}
+      {suffix}
+    </span>
+  );
+}
 
 export default function LandingPage() {
   const [theme, setTheme] = useState("light");
 
   useEffect(() => {
-    // Charger la préférence depuis localStorage
     const savedTheme = localStorage.getItem("theme") || "light";
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
 
-    // Initialiser Lucide Icons
     if (typeof window !== "undefined" && window.lucide) {
       window.lucide.createIcons();
     }
@@ -40,8 +80,13 @@ export default function LandingPage() {
 
   return (
     <Fragment>
-      {/* HEAD pour CDN */}
       <Head>
+        <title>StudentBoard – Organise ta vie d’étudiant</title>
+        <link rel="icon" href="/favicon.ico" />
+        <meta
+          name="description"
+          content="Planifie tes cours, suis tes notes et gère ton emploi du temps avec StudentBoard."
+        />
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.js"></script>
         <script src="https://unpkg.com/lucide@latest"></script>
@@ -55,12 +100,12 @@ export default function LandingPage() {
             <div className="flex gap-4">
               <button onClick={toggleTheme} className="btn btn-circle">
                 {theme === "light" ? (
-                  <FiMoon size={20} color="#000"/>
+                  <FiMoon size={20} color="#000" />
                 ) : (
-                  <IoSunnyOutline size={20} color="#ffd700"/>
+                  <IoSunnyOutline size={20} color="#ffd700" />
                 )}
               </button>
-              
+
               <a href="/login" className="btn btn-sm btn-outline btn-secondary">
                 Se connecter
               </a>
@@ -83,12 +128,13 @@ export default function LandingPage() {
               Organise ta vie d’étudiant facilement 🎓
             </h1>
             <p className="text-lg mb-8 text-base-content/80">
-              Planifie tes cours, suis tes notes et gère ton emploi du temps depuis une seule plateforme. 
-              StudenBoard t’aide à rester concentré sur l’essentiel.
+              Planifie tes cours, suis tes notes et gère ton emploi du temps
+              depuis une seule plateforme. StudenBoard t’aide à rester concentré
+              sur l’essentiel.
             </p>
             <div className="flex gap-4 flex-wrap">
               <a href="/register" className="btn btn-primary ">
-                Essayer gratuitement
+                Inscrivez vous maintenant
               </a>
               <a href="/login" className="btn btn-outline btn-secondary ">
                 Se connecter
@@ -97,7 +143,7 @@ export default function LandingPage() {
           </motion.div>
 
           <motion.img
-            src="/imgs/dashboard.png"
+            src="/imgs/dashboardPhoto.jpg"
             alt="Dashboard StudenBoard"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -106,16 +152,23 @@ export default function LandingPage() {
           />
         </section>
 
-        {/* CHIFFRES CLÉS */}
+        {/* CHIFFRES CLÉS avec animation */}
         <section className="bg-base-200 py-16">
           <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             {[
-              { value: "+10 000", label: "Étudiants actifs" },
-              { value: "95 %", label: "Satisfaction" },
-              { value: "100 %", label: "Compatible mobile & web" },
+              { value: 10000, label: "Étudiants actifs", prefix: "+", suffix: "" },
+              { value: 95, label: "Satisfaction", prefix: "", suffix: " %" },
+              { value: 100, label: "Compatible mobile & web", prefix: "", suffix: " %" },
             ].map((item, index) => (
               <div key={index}>
-                <h3 className="text-4xl font-bold text-primary">{item.value}</h3>
+                <h3 className="text-4xl font-bold text-primary">
+                  <CountUpOnView
+                    end={item.value}
+                    duration={1500 + index * 200}
+                    prefix={item.prefix}
+                    suffix={item.suffix}
+                  />
+                </h3>
                 <p className="text-base-content/80 mt-2">{item.label}</p>
               </div>
             ))}
@@ -130,13 +183,41 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {[
-              { title: "Gestion des matières", desc: "Ajoute, organise et consulte toutes tes matières facilement." },
-              { title: "Emploi du temps intelligent", desc: "Planifie tes cours et reçois des rappels automatiques." },
-              { title: "Suivi des notes", desc: "Suis tes moyennes et vois ton évolution par semestre." },
-              { title: "Statistiques claires", desc: "Un tableau de bord qui t’aide à mieux s’organiser." },
+              {
+                title: "Gestion des matières",
+                desc: "Ajoute, organise et consulte toutes tes matières facilement.",
+                image: "/imgs/Learning-rafiki.png"
+              },
+              {
+                title: "Emploi du temps intelligent",
+                desc: "Planifie tes cours et reçois des rappels automatiques.",
+                image: "/imgs/Schedule-pana.png"
+              },
+              {
+                title: "Suivi des notes",
+                desc: "Suis tes moyennes et vois ton évolution par semestre.",
+                image: "/imgs/undraw_analytics-setup_ptrz.png"
+              },
+              {
+                title: "Statistiques claires",
+                desc: "Un tableau de bord qui t’aide à mieux t’organiser.",
+                image: "/imgs/Datareport-pana.png"
+              },
             ].map((feature, index) => (
-              <div key={index} className="bg-base-100 shadow-md rounded-2xl p-6 text-center hover:shadow-lg transition">
-                <h3 className="text-xl font-semibold mb-2 text-base-content">{feature.title}</h3>
+              
+              <div
+                key={index}
+                className="bg-base-100 shadow-md rounded-2xl p-6 text-center hover:shadow-lg transition"
+              >
+                <img
+                src={feature.image}
+                alt={feature.title}
+                className="w-30 h-30 mx-auto mb-4"
+              />
+
+                <h3 className="text-xl font-semibold mb-2 text-base-content">
+                  {feature.title}
+                </h3>
                 <p className="text-base-content/80">{feature.desc}</p>
               </div>
             ))}
@@ -146,16 +227,39 @@ export default function LandingPage() {
         {/* AVIS ÉTUDIANTS */}
         <section className="bg-base-200 py-20">
           <div className="max-w-7xl mx-auto px-6 text-center">
-            <h2 className="text-4xl font-bold mb-10">Ce que disent nos étudiants</h2>
+            <h2 className="text-4xl font-bold mb-10">
+              Ce que disent nos étudiants
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               {[
-                { name: "Sanders Tano", text: "StudenBoard a complètement changé ma façon d’étudier. Je suis beaucoup plus organisée !", img: "/imgs/PhotoSanders.jpg" },
-                { name: "Yasser Sankara", text: "L’application est claire, rapide et super utile. Je recommande à tous les étudiants.", img: "/imgs/PhotoSankara.jpg" },
-                { name: "Mohamed Kaboré", text: "J’adore le design et les fonctionnalités. Tout est pensé pour nous faciliter la vie.", img: "/imgs/PhotoKabore.jpg" },
+                {
+                  name: "Sanders Tano",
+                  text: "StudenBoard a complètement changé ma façon d’étudier. Je suis beaucoup plus organisée !",
+                  img: "/imgs/PhotoSanders.jpg",
+                },
+                {
+                  name: "Yasser Sankara",
+                  text: "L’application est claire, rapide et super utile. Je recommande à tous les étudiants.",
+                  img: "/imgs/PhotoSankara.jpg",
+                },
+                {
+                  name: "Mohamed Kaboré",
+                  text: "J’adore le design et les fonctionnalités. Tout est pensé pour nous faciliter la vie.",
+                  img: "/imgs/PhotoKabore.jpg",
+                },
               ].map((review, index) => (
-                <div key={index} className="bg-base-100 shadow-md rounded-2xl p-6">
-                  <img src={review.img} alt={review.name} className="w-16 h-16 mx-auto rounded-full mb-4" />
-                  <p className="text-base-content/80 italic mb-4">“{review.text}”</p>
+                <div
+                  key={index}
+                  className="bg-base-100 shadow-md rounded-2xl p-6"
+                >
+                  <img
+                    src={review.img}
+                    alt={review.name}
+                    className="w-16 h-16 mx-auto rounded-full mb-4"
+                  />
+                  <p className="text-base-content/80 italic mb-4">
+                    “{review.text}”
+                  </p>
                   <h4 className="font-semibold text-primary">{review.name}</h4>
                 </div>
               ))}
@@ -167,7 +271,8 @@ export default function LandingPage() {
         <section className="py-20 text-center">
           <h2 className="text-4xl font-bold mb-6">Commence dès aujourd’hui</h2>
           <p className="text-base-content/80 mb-8">
-            Rejoins des milliers d’étudiants qui simplifient leur quotidien avec StudenBoard.
+            Rejoins des milliers d’étudiants qui simplifient leur quotidien avec
+            StudenBoard.
           </p>
           <a href="/register" className="btn btn-primary btn-lg">
             Créer un compte gratuitement
@@ -177,13 +282,28 @@ export default function LandingPage() {
         {/* FOOTER */}
         <footer className="bg-base-200 py-10 text-center text-base-content/70">
           <div className="flex justify-center gap-6 mb-4 text-2xl">
-            <a href="https://wa.me/2250500802026" title="Whatsapp" target="_blank" className="hover:text-green-500">
+            <a
+              href="https://wa.me/2250500802026"
+              title="Whatsapp"
+              target="_blank"
+              className="hover:text-green-500"
+            >
               <FaWhatsapp />
             </a>
-            <a href="mailto:goubadesire0@gmail.com" title="E-mail" target="_blank" className="hover:text-red-500">
+            <a
+              href="mailto:goubadesire0@gmail.com"
+              title="E-mail"
+              target="_blank"
+              className="hover:text-red-500"
+            >
               <FaEnvelope />
             </a>
-            <a href="https://goubadesire.github.io/portfolio/" target="_blank" title="Portfolio" className="hover:text-blue-500">
+            <a
+              href="https://goubadesire.github.io/portfolio/"
+              target="_blank"
+              title="Portfolio"
+              className="hover:text-blue-500"
+            >
               <BsGlobe />
             </a>
           </div>

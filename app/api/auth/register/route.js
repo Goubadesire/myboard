@@ -40,7 +40,7 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Impossible de créer l'utilisateur" }), { status: 400 });
     }
 
-    console.log("✅ UTILISATEUR AJOUTÉ :", data);
+    console.log("✅ UTILISATEUR AJOUTÉ :", data); // pour moi le dev
 
     return new Response(
       JSON.stringify({ message: "Utilisateur créé avec succès", data }),

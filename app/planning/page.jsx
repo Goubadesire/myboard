@@ -28,6 +28,16 @@ export default function EmploiDuTempsPage() {
     "bg-pink-100 text-pink-800",
     "bg-indigo-100 text-indigo-800",
     "bg-red-100 text-red-800",
+    "bg-orange-100 text-orange-800",
+    "bg-teal-100 text-teal-800",
+    "bg-cyan-100 text-cyan-800",
+    "bg-rose-100 text-rose-800",
+    "bg-slate-100 text-slate-800"
+
+
+
+
+
   ];
 
   useEffect(() => {

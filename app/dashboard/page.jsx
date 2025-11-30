@@ -7,6 +7,7 @@ import { getUser } from "@/lib/session";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title } from "chart.js";
 import { FaCalendarAlt } from "react-icons/fa";
+import NoelSection from "../components/NoelSection";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title);
 
@@ -16,7 +17,8 @@ export default function DashboardPage() {
   const [matieres, setMatieres] = useState([]);
   const [notes, setNotes] = useState([]);
   const [semestres, setSemestres] = useState([]);
-  const [citation, setCitation] = useState(null);
+  const [citation, setCitation] = useState(null); // Citation API (commentée pour l'instant)
+  
 
   const sessionUser = getUser();
 
@@ -52,6 +54,8 @@ export default function DashboardPage() {
     fetchAll();
   }, [sessionUser?.email]);
 
+  // -------------------- Fetch citations (commentée) --------------------
+  /*
   useEffect(() => {
     const fetchCitation = async () => {
       try {
@@ -67,6 +71,9 @@ export default function DashboardPage() {
     const interval = setInterval(fetchCitation, 300000);
     return () => clearInterval(interval);
   }, []);
+  */
+
+  
 
   // 🔹 Moyenne par matière
   const moyenneParMatiere = useMemo(() => {
@@ -83,7 +90,7 @@ export default function DashboardPage() {
     });
   }, [matieres, notes]);
 
-  // 🔹 Moyenne par semestre (cartes fonctionnelles)
+  // 🔹 Moyenne par semestre
   const moyennesSemestres = useMemo(() => {
     const map = {};
     semestres.forEach((s) => {
@@ -217,12 +224,16 @@ export default function DashboardPage() {
           </div>
         </div>
 
+
+        {/* -------------------- CITATION (commentée) --------------------
         {citation && (
           <div className="p-4 mt-6 bg-indigo-50 rounded-2xl shadow-lg text-center">
             <p className="italic text-indigo-700 text-lg">"{citation.texte}"</p>
             <p className="mt-2 font-semibold text-indigo-900">- {citation.auteur}</p>
           </div>
         )}
+        */}
+        <NoelSection />
       </MainLayout>
     </AuthGuard>
   );

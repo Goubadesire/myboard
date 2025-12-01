@@ -357,7 +357,7 @@ export default function LandingPage() {
                       hover:-translate-y-2">
         <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white/40">
           <img 
-            src="/imgs/photoKabore.jpg" 
+            src="/imgs/kabore.jpg" 
             alt="Nom utilisateur"
             className="w-full h-full object-cover"
           />

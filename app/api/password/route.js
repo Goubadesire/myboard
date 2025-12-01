@@ -1,8 +1,10 @@
 // /pages/api/password/forgot.js
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { randomBytes } from "crypto";
 
 export default async function handler(req, res) {
+  const supabase = getSupabaseClient(); // créé ici
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Méthode non autorisée" });
   }
@@ -22,7 +24,7 @@ export default async function handler(req, res) {
       .single();
 
     if (userError || !user) {
-      // ⚠ On ne dit pas si l'utilisateur existe pour la sécurité
+      // ⚠ Ne pas révéler l'existence de l'utilisateur
       return res.status(200).json({ message: "Si cet email existe, un lien de réinitialisation a été envoyé." });
     }
 
@@ -45,11 +47,8 @@ export default async function handler(req, res) {
     // 4️⃣ Préparer le lien de réinitialisation
     const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/password/reset?token=${token}`;
 
-    // 5️⃣ TODO: Envoyer l'email via ton service SMTP (Mailtrap, SendGrid, etc.)
-    // Exemple pseudo-code :
-    // await sendEmail(user.email, "Réinitialisation du mot de passe", `Cliquez ici pour réinitialiser : ${resetLink}`);
+    // 5️⃣ TODO: Envoyer l'email via SMTP
 
-    // 6️⃣ Réponse
     return res.status(200).json({ message: "Si cet email existe, un lien de réinitialisation a été envoyé." });
 
   } catch (err) {

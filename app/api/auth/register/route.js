@@ -1,7 +1,8 @@
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import bcrypt from "bcryptjs";
 
 export async function POST(req) {
+  const supabase = getSupabaseClient(); // ✅ récupère le client
   try {
     const { name, email, password } = await req.json();
 
@@ -12,7 +13,6 @@ export async function POST(req) {
       );
     }
 
-    // 1️⃣ Vérifie si l'email existe déjà
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
@@ -26,10 +26,8 @@ export async function POST(req) {
       );
     }
 
-    // 2️⃣ Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3️⃣ Création de l'utilisateur
     const { data, error } = await supabase
       .from("users")
       .insert([{ name, email, password: hashedPassword }])
@@ -39,8 +37,6 @@ export async function POST(req) {
       console.error("💥 ERREUR SUPABASE :", error);
       return new Response(JSON.stringify({ error: "Impossible de créer l'utilisateur" }), { status: 400 });
     }
-
-    console.log("✅ UTILISATEUR AJOUTÉ :", data); // pour moi le dev
 
     return new Response(
       JSON.stringify({ message: "Utilisateur créé avec succès", data }),

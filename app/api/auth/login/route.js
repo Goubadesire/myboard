@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabaseClient"
+import { getSupabaseClient } from "@/lib/supabaseClient" // ✅
 import bcrypt from "bcryptjs"
 
 export async function POST(req) {
+  const supabase = getSupabaseClient(); // Récupère le client Supabase
   try {
     const { email, password } = await req.json()
 
@@ -29,11 +30,10 @@ export async function POST(req) {
       user: { id: user.id, name: user.name, email: user.email },
     })
 
-    // Enregistre le cookie (durée : 7 jours)
     response.cookies.set("user", JSON.stringify({ id: user.id, email: user.email }), {
-      httpOnly: true, // Empêche JavaScript d’y accéder (sécurité)
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
+      maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
 

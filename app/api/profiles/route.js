@@ -1,46 +1,10 @@
-import { supabase } from "@/lib/supabaseClient";
+// app/api/profiles/route.js
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
-
-
+// GET /api/profiles
 export async function GET(req) {
-  try {
-    const email = req.headers.get("email");
-    if (!email) {
-      return new Response(JSON.stringify({ error: "Utilisateur non connecté" }), { status: 401 });
-    }
+  const supabase = getSupabaseClient();
 
-    // Récupérer l'utilisateur
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single();
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 404 });
-    }
-
-    // Récupérer le profil
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (profileError) throw profileError;
-
-    return new Response(JSON.stringify({ profile }), { status: 200 });
-  } catch (err) {
-    console.error("Erreur GET profile :", err);
-    return new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 });
-  }
-}
-
-
-
-
-
-export async function PUT(req) {
   try {
     const email = req.headers.get("email");
     if (!email) {
@@ -49,19 +13,7 @@ export async function PUT(req) {
         { status: 401 }
       );
     }
-   
 
-    const { full_name, filiere, ecole, photo_url } = await req.json();
- console.log("📥 Payload reçu API :", { full_name, filiere, ecole, photo_url });
-    // 🔹 Validation des champs obligatoires
-    if (!full_name || !filiere || !ecole) {
-      return new Response(
-        JSON.stringify({ error: "Données manquantes" }),
-        { status: 400 }
-      );
-    }
-
-    // 🔹 Récupérer l'utilisateur
     const { data: user, error: userError } = await supabase
       .from("users")
       .select("id")
@@ -75,7 +27,59 @@ export async function PUT(req) {
       );
     }
 
-    // 🔹 Vérifier si le profil existe
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    return new Response(JSON.stringify({ profile }), { status: 200 });
+  } catch (err) {
+    console.error("Erreur GET profile :", err);
+    return new Response(
+      JSON.stringify({ error: "Erreur serveur" }),
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/profiles
+export async function PUT(req) {
+  const supabase = getSupabaseClient();
+
+  try {
+    const email = req.headers.get("email");
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: "Utilisateur non connecté" }),
+        { status: 401 }
+      );
+    }
+
+    const { full_name, filiere, ecole, photo_url } = await req.json();
+
+    if (!full_name || !filiere || !ecole) {
+      return new Response(
+        JSON.stringify({ error: "Données manquantes" }),
+        { status: 400 }
+      );
+    }
+
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Utilisateur introuvable" }),
+        { status: 404 }
+      );
+    }
+
     const { data: existingProfile, error: existingError } = await supabase
       .from("profiles")
       .select("id")
@@ -83,13 +87,9 @@ export async function PUT(req) {
       .maybeSingle();
 
     if (existingError) throw existingError;
-console.log("📥 Payload reçu API :", { full_name, filiere, ecole, photo_url });
-console.log("🔹 User trouvé :", user);
-console.log("🔹 Profil existant :", existingProfile);
 
     let data;
     if (existingProfile) {
-      // Mettre à jour
       const { data: updatedProfile, error: updateError } = await supabase
         .from("profiles")
         .update({ full_name, filiere, ecole, photo_url })
@@ -100,7 +100,6 @@ console.log("🔹 Profil existant :", existingProfile);
       if (updateError) throw updateError;
       data = updatedProfile;
     } else {
-      // Créer
       const { data: newProfile, error: insertError } = await supabase
         .from("profiles")
         .insert([{ user_id: user.id, full_name, filiere, ecole, photo_url }])

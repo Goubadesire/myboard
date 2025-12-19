@@ -445,19 +445,7 @@ export default function LandingPage() {
       </div>
 
 
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6 
-                      shadow-lg hover:shadow-2xl transition-all duration-300 
-                      hover:-translate-y-2">
-        <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white/40">
-          <img 
-            src="/imgs/geraude.jpeg" 
-            alt="Nom utilisateur"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <h3 className="text-xl font-semibold text-white">Kouadio Geraude</h3>
-        <p className="text-gray-300 text-sm mt-1">Étudiante . 2IFGT</p>
-      </div>
+      
 
       {/* Copie-colle ce bloc autant de fois que nécessaire */}
       {/* ... */}

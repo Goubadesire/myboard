@@ -31,7 +31,7 @@ export default function DashboardPage() {
         const [dRes, mRes, nRes, sRes] = await Promise.all([
           fetch("/api/devoirs", { headers: { email: sessionUser.email } }),
           fetch("/api/matieres", { headers: { email: sessionUser.email } }),
-          //fetch("/api/notes", { headers: { email: sessionUser.email } }),
+          fetch("/api/notes", { headers: { email: sessionUser.email } }),
           fetch("/api/semestres", { headers: { email: sessionUser.email } }),
         ]);
 

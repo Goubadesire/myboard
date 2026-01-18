@@ -6,9 +6,7 @@ import { PiExamDuotone } from "react-icons/pi";
 import { CiCalendarDate } from "react-icons/ci";
 import { MdAdsClick } from "react-icons/md";
 import { TbUserScan } from "react-icons/tb";
-import { TbChristmasTreeFilled } from "react-icons/tb";
-import { FaLandmarkFlag } from "react-icons/fa6";
-import { MdOutlineQuiz } from "react-icons/md";
+
 import { IoIosLogOut } from "react-icons/io";
 import Link from "next/link";
 
@@ -49,10 +47,6 @@ export default function Sidebar({profile}) {
         <li className="btn btn-ghost w-full justify-start gap-2">
           <TbUserScan size={20} color="#9c27b0"/>
           <Link href='/profiles'>Profiles</Link>
-        </li>
-        <li className="btn btn-ghost w-full justify-start gap-2">
-          <TbChristmasTreeFilled size={20} color="#FF3B3B"/>
-          <Link href='/noel'>Noel</Link>
         </li>
         <li className="btn btn-ghost w-full justify-start gap-2">
           <IoIosLogOut size={20} color="#4B5563"/>

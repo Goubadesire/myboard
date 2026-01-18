@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const [matieres, setMatieres] = useState([]);
   const [notes, setNotes] = useState([]);
   const [semestres, setSemestres] = useState([]);
-  const [citation, setCitation] = useState(null); // Citation API (commentée pour l'instant)
+  const [citation, setCitation] = useState(null);
   
 
   const sessionUser = getUser();
@@ -31,7 +31,7 @@ export default function DashboardPage() {
         const [dRes, mRes, nRes, sRes] = await Promise.all([
           fetch("/api/devoirs", { headers: { email: sessionUser.email } }),
           fetch("/api/matieres", { headers: { email: sessionUser.email } }),
-          fetch("/api/notes", { headers: { email: sessionUser.email } }),
+          //fetch("/api/notes", { headers: { email: sessionUser.email } }),
           fetch("/api/semestres", { headers: { email: sessionUser.email } }),
         ]);
 
@@ -55,7 +55,7 @@ export default function DashboardPage() {
   }, [sessionUser?.email]);
 
   // -------------------- Fetch citations (commentée) --------------------
-  /*
+
   useEffect(() => {
     const fetchCitation = async () => {
       try {
@@ -71,7 +71,7 @@ export default function DashboardPage() {
     const interval = setInterval(fetchCitation, 300000);
     return () => clearInterval(interval);
   }, []);
-  */
+
 
   
 
@@ -225,15 +225,15 @@ export default function DashboardPage() {
         </div>
 
 
-        {/* -------------------- CITATION (commentée) --------------------
+
         {citation && (
           <div className="p-4 mt-6 bg-indigo-50 rounded-2xl shadow-lg text-center">
             <p className="italic text-indigo-700 text-lg">"{citation.texte}"</p>
             <p className="mt-2 font-semibold text-indigo-900">- {citation.auteur}</p>
           </div>
         )}
-        */}
-        <NoelSection />
+
+
       </MainLayout>
     </AuthGuard>
   );
